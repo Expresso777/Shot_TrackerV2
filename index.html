@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -6,11 +7,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Espresso">
-<meta name="theme-color" content="#F2F0EB" id="theme-color-meta">
+<meta name="theme-color" content="#F2F0EB">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Espresso Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *, *::before, *::after {
   margin: 0; padding: 0; box-sizing: border-box;
@@ -18,8 +20,6 @@
   touch-action: manipulation;
   -webkit-touch-callout: none;
 }
-
-/* ── LIGHT MODE (default) ── */
 :root {
   --bg: #F2F0EB;
   --card: #FFFFFF;
@@ -36,50 +36,20 @@
   --red: #E53935; --red-bg: #FDEAEA;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --sync-color: #27AE60;
 }
-
-/* ── DARK MODE ── */
-body.dark {
-  --bg: #0F0E0C;
-  --card: #1C1A17;
-  --text-primary: #F0EDE8;
-  --text-secondary: #6B6560;
-  --accent: #D4894A;
-  --accent-light: #2A1F14;
-  --border: #2C2925;
-  --toggle-bg: #2C2925;
-  --toggle-active: #F0EDE8;
-  --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
-  --green-bg: #0D2A18;
-  --yellow-bg: #2A2000;
-  --red-bg: #2A0D0D;
-}
-
 html { height: 100%; overflow: hidden; -webkit-text-size-adjust: 100%; }
-
 body {
   font-family: 'DM Sans', sans-serif;
   background: var(--bg);
-  height: 100%;
-  overflow: hidden;
+  height: 100%; overflow: hidden;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
-  user-select: none;
-  -webkit-user-select: none;
-  transition: background 0.3s, color 0.3s;
+  user-select: none; -webkit-user-select: none;
 }
-
 * { touch-action: manipulation; }
 
-#app {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding-top: var(--safe-top);
-}
+/* ── APP WRAPPER ── */
+#app { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; padding-top: var(–safe-top); }
 
 /* ── SCREENS ── */
 .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; min-height: 0; }
@@ -87,594 +57,375 @@ body {
 
 /* ── TOP BAR ── */
 .top-bar {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  padding: 12px 16px 4px;
-  flex-shrink: 0;
+display: grid;
+grid-template-columns: 1fr auto 1fr;
+align-items: center;
+padding: 12px 16px 8px;
+flex-shrink: 0;
+min-height: 52px;
 }
 .top-bar-left { display: flex; justify-content: flex-start; gap: 8px; align-items: center; }
 .top-bar-center { text-align: center; }
 .top-bar-center h1 {
-  font-family: 'DM Serif Display', serif;
-  font-size: 22px; color: var(--text-primary);
-  line-height: 1; font-style: italic; white-space: nowrap;
+font-family: ‘DM Serif Display’, serif;
+font-size: 22px; color: var(–text-primary);
+line-height: 1; font-style: italic; white-space: nowrap;
 }
-.top-bar-center p { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.top-bar-center p { font-size: 11px; color: var(–text-secondary); margin-top: 2px; }
 .top-bar-right { display: flex; justify-content: flex-end; gap: 8px; align-items: center; }
 
 .nav-btn {
-  background: var(--card); border: none; border-radius: 12px;
-  padding: 8px 13px; font-family: 'DM Sans', sans-serif;
-  font-size: 12px; font-weight: 500; color: var(--text-secondary);
-  cursor: pointer; box-shadow: var(--shadow); white-space: nowrap;
+background: var(–card); border: none; border-radius: 12px;
+padding: 8px 13px;
+font-family: ‘DM Sans’, sans-serif; font-size: 12px; font-weight: 500;
+color: var(–text-secondary); cursor: pointer;
+box-shadow: var(–shadow); white-space: nowrap;
+height: 34px; display: flex; align-items: center;
 }
 .icon-btn {
-  background: var(--card); border: none; border-radius: 12px;
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; box-shadow: var(--shadow); color: var(--text-secondary);
+background: var(–card); border: none; border-radius: 12px;
+width: 34px; height: 34px;
+display: flex; align-items: center; justify-content: center;
+cursor: pointer; box-shadow: var(–shadow); color: var(–text-secondary);
 }
 .filter-btn {
-  width: 34px; height: 34px; background: var(--card); border: none;
-  border-radius: 12px; cursor: pointer; box-shadow: var(--shadow);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--text-secondary); position: relative;
+width: 34px; height: 34px;
+background: var(–card); border: none; border-radius: 12px;
+cursor: pointer; box-shadow: var(–shadow);
+display: flex; align-items: center; justify-content: center;
+color: var(–text-secondary); position: relative;
 }
 .filter-badge {
-  position: absolute; top: -3px; right: -3px;
-  width: 14px; height: 14px; border-radius: 7px;
-  background: var(--accent); color: white;
-  font-size: 9px; font-weight: 700;
-  display: none; align-items: center; justify-content: center;
+position: absolute; top: -3px; right: -3px;
+width: 14px; height: 14px; border-radius: 7px;
+background: var(–accent); color: white;
+font-size: 9px; font-weight: 700;
+display: none; align-items: center; justify-content: center;
 }
 .filter-badge.show { display: flex; }
 
-/* ── SYNC INDICATOR ── */
-.sync-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--sync-color); flex-shrink: 0;
-  transition: background 0.3s;
-}
-.sync-dot.syncing { background: var(--yellow); animation: pulse 1s infinite; }
-.sync-dot.error { background: var(--red); }
-.sync-dot.offline { background: var(--text-secondary); }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
 /* ── CARDS ── */
-.card {
-  background: var(--card); border-radius: 18px;
-  padding: 12px 15px; box-shadow: var(--shadow); flex-shrink: 0;
-}
-.card-label {
-  font-size: 10px; font-weight: 600; color: var(--text-secondary);
-  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
-}
+.card { background: var(–card); border-radius: 18px; padding: 12px 15px; box-shadow: var(–shadow); flex-shrink: 0; }
+.card-label { font-size: 10px; font-weight: 600; color: var(–text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
 
 /* ── SCREEN 1: SHOT LOG ── */
 .log-scroll {
-  flex: 1; overflow-y: auto; overflow-x: hidden;
-  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-  padding: 8px 16px 4px;
-  display: flex; flex-direction: column; gap: 8px; min-height: 0;
+flex: 1; overflow-y: auto; overflow-x: hidden;
+-webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+padding: 8px 16px 4px;
+display: flex; flex-direction: column; gap: 8px; min-height: 0;
 }
 .log-scroll::-webkit-scrollbar { display: none; }
-
 .save-wrap {
-  flex-shrink: 0; padding: 10px 16px;
-  padding-bottom: calc(10px + var(--safe-bottom));
-  background: var(--bg);
+flex-shrink: 0; padding: 10px 16px;
+padding-bottom: calc(10px + var(–safe-bottom));
+background: var(–bg);
 }
 .save-btn {
-  background: var(--text-primary); color: var(--bg);
-  border: none; border-radius: 16px; padding: 17px;
-  font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600;
-  cursor: pointer; width: 100%; transition: all 0.2s;
+background: var(–text-primary); color: white; border: none;
+border-radius: 16px; padding: 17px;
+font-family: ‘DM Sans’, sans-serif; font-size: 16px; font-weight: 600;
+cursor: pointer; width: 100%; transition: all 0.2s;
 }
 .save-btn:active { opacity: 0.8; }
 
 .bean-row { display: flex; align-items: center; justify-content: space-between; }
-.bean-name { font-size: 15px; font-weight: 500; color: var(--text-primary); }
-.bean-sub { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
-.bean-change {
-  font-size: 12px; font-weight: 500; color: var(--accent);
-  cursor: pointer; background: none; border: none;
-  font-family: 'DM Sans', sans-serif;
-}
+.bean-name { font-size: 15px; font-weight: 500; color: var(–text-primary); }
+.bean-sub { font-size: 12px; color: var(–text-secondary); margin-top: 1px; }
+.bean-change { font-size: 12px; font-weight: 500; color: var(–accent); cursor: pointer; background: none; border: none; font-family: ‘DM Sans’, sans-serif; }
 
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-shrink: 0; }
 
 .toggle-group { display: flex; gap: 6px; }
 .toggle-btn {
-  flex: 1; padding: 8px 0; border: none; border-radius: 12px;
-  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
-  cursor: pointer; transition: all 0.18s;
-  background: var(--toggle-bg); color: var(--text-secondary);
+flex: 1; padding: 8px 0; border: none; border-radius: 12px;
+font-family: ‘DM Sans’, sans-serif; font-size: 13px; font-weight: 500;
+cursor: pointer; transition: all 0.18s;
+background: var(–toggle-bg); color: var(–text-secondary);
 }
-.toggle-btn.active { background: var(--toggle-active); color: var(--bg); }
+.toggle-btn.active { background: var(–toggle-active); color: #fff; }
 
-.stepper-card {
-  background: var(--card); border-radius: 18px;
-  padding: 11px 13px; box-shadow: var(--shadow);
-}
-.stepper-label {
-  font-size: 10px; font-weight: 600; color: var(--text-secondary);
-  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 7px;
-}
-.stepper-label-row {
-  display: flex; align-items: center; gap: 6px; margin-bottom: 7px;
-}
+.stepper-card { background: var(–card); border-radius: 18px; padding: 11px 13px; box-shadow: var(–shadow); }
+.stepper-label { font-size: 10px; font-weight: 600; color: var(–text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 7px; }
+.stepper-label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
 .stepper-label-row .stepper-label { margin-bottom: 0; }
 .stepper { display: flex; align-items: center; justify-content: space-between; }
 .stepper-btn {
-  width: 34px; height: 34px; border-radius: 10px; border: none;
-  background: var(--accent-light); color: var(--accent); font-size: 20px;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s; user-select: none; -webkit-user-select: none;
-  touch-action: manipulation;
+width: 34px; height: 34px; border-radius: 10px; border: none;
+background: var(–accent-light); color: var(–accent); font-size: 20px;
+cursor: pointer; display: flex; align-items: center; justify-content: center;
+transition: all 0.15s; user-select: none; -webkit-user-select: none; touch-action: manipulation;
 }
-.stepper-btn:active { transform: scale(0.9); background: var(--accent); color: white; }
-.stepper-value {
-  font-size: 22px; font-weight: 500; color: var(--text-primary);
-  min-width: 56px; text-align: center;
-}
-.stepper-unit { font-size: 12px; color: var(--text-secondary); font-weight: 400; }
+.stepper-btn:active { transform: scale(0.9); background: var(–accent); color: white; }
+.stepper-value { font-size: 22px; font-weight: 500; color: var(–text-primary); min-width: 56px; text-align: center; }
+.stepper-unit { font-size: 12px; color: var(–text-secondary); font-weight: 400; }
+.ratio-chip { background: var(–accent-light); color: var(–accent); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.03em; white-space: nowrap; }
 
-.ratio-chip {
-  background: var(--accent-light); color: var(--accent);
-  font-size: 11px; font-weight: 600;
-  padding: 3px 8px; border-radius: 6px;
-  letter-spacing: 0.03em; white-space: nowrap;
-}
-
-.ios-toggle {
-  width: 48px; height: 28px; background: #34C759;
-  border-radius: 14px; position: relative; cursor: pointer;
-  transition: background 0.2s; flex-shrink: 0;
-}
-.ios-toggle::after {
-  content: '';
-  position: absolute; width: 24px; height: 24px;
-  background: white; border-radius: 12px;
-  top: 2px; left: 22px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-  transition: left 0.2s;
-}
-.ios-toggle.off { background: var(--toggle-bg); }
+.ios-toggle { width: 48px; height: 28px; background: #34C759; border-radius: 14px; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+.ios-toggle::after { content: ‘’; position: absolute; width: 24px; height: 24px; background: white; border-radius: 12px; top: 2px; left: 22px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); transition: left 0.2s; }
+.ios-toggle.off { background: var(–toggle-bg); }
 .ios-toggle.off::after { left: 2px; }
 
 .puck-row { display: flex; align-items: center; justify-content: space-between; }
-.puck-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
-.puck-sub { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+.puck-title { font-size: 14px; font-weight: 500; color: var(–text-primary); }
+.puck-sub { font-size: 11px; color: var(–text-secondary); margin-top: 1px; }
 
 .notes-input {
-  width: 100%; border: none; background: transparent;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px; color: var(--text-secondary);
-  resize: none; outline: none; height: 28px;
-  touch-action: manipulation;
-  user-select: text; -webkit-user-select: text;
+width: 100%; border: none; background: transparent;
+font-family: ‘DM Sans’, sans-serif; font-size: 13px; color: var(–text-secondary);
+resize: none; outline: none; height: 28px;
+touch-action: manipulation; user-select: text; -webkit-user-select: text;
 }
-
-.auto-badge {
-  font-size: 9px; font-weight: 700;
-  padding: 2px 6px; border-radius: 5px; letter-spacing: 0.04em;
-}
-.auto-badge.auto { background: var(--accent-light); color: var(--accent); }
-.auto-badge.manual { background: var(--toggle-bg); color: var(--text-secondary); }
+.auto-badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 5px; letter-spacing: 0.04em; }
+.auto-badge.auto { background: var(–accent-light); color: var(–accent); }
+.auto-badge.manual { background: var(–toggle-bg); color: var(–text-secondary); }
 
 /* ── SCREEN 2: VERLAUF ── */
 .verlauf-content {
-  flex: 1; display: flex; flex-direction: column;
-  padding: 8px 16px;
-  padding-bottom: calc(8px + var(--safe-bottom));
-  gap: 8px; overflow: hidden; min-height: 0;
+flex: 1; display: flex; flex-direction: column;
+padding: 8px 16px;
+padding-bottom: calc(8px + var(–safe-bottom));
+gap: 8px; overflow: hidden; min-height: 0;
 }
 
+/* Stats strip — now at top */
+.stats-strip { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; flex-shrink: 0; }
+.stat-card { background: var(–card); border-radius: 14px; padding: 10px 10px; box-shadow: var(–shadow); text-align: center; }
+.stat-value { font-size: 18px; font-weight: 600; color: var(–text-primary); line-height: 1; }
+.stat-label { font-size: 10px; color: var(–text-secondary); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+
+/* Filter bar below stats */
 .filter-bar { display: flex; gap: 7px; align-items: center; flex-shrink: 0; }
 .filter-scroll { display: flex; gap: 6px; overflow-x: auto; flex: 1; scrollbar-width: none; }
 .filter-scroll::-webkit-scrollbar { display: none; }
 .filter-chip {
-  display: flex; align-items: center; gap: 4px;
-  background: var(--card); border: 1.5px solid var(--border);
-  border-radius: 20px; padding: 5px 11px;
-  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
-  color: var(--text-secondary); cursor: pointer; white-space: nowrap; flex-shrink: 0;
+display: flex; align-items: center; gap: 4px;
+background: var(–card); border: 1.5px solid var(–border); border-radius: 20px;
+padding: 5px 11px;
+font-family: ‘DM Sans’, sans-serif; font-size: 12px; font-weight: 500;
+color: var(–text-secondary); cursor: pointer; white-space: nowrap; flex-shrink: 0;
 }
-.filter-chip.active { background: var(--toggle-active); border-color: var(--toggle-active); color: var(--bg); }
+.filter-chip.active { background: var(–toggle-active); border-color: var(–toggle-active); color: white; }
 
-.stats-strip { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; flex-shrink: 0; }
-.stat-card {
-  background: var(--card); border-radius: 14px;
-  padding: 10px; box-shadow: var(--shadow); text-align: center;
-}
-.stat-value { font-size: 18px; font-weight: 600; color: var(--text-primary); line-height: 1; }
-.stat-label { font-size: 10px; color: var(--text-secondary); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-
+/* Table */
 .table-wrap {
-  flex: 1; overflow-y: auto; overflow-x: hidden;
-  background: var(--card); border-radius: 18px;
-  box-shadow: var(--shadow); min-height: 0;
-  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+flex: 1; overflow-y: auto; overflow-x: hidden;
+background: var(–card); border-radius: 18px;
+box-shadow: var(–shadow); min-height: 0;
+-webkit-overflow-scrolling: touch; overscroll-behavior: contain;
 }
 .table-wrap::-webkit-scrollbar { display: none; }
-
 table { width: 100%; border-collapse: collapse; }
 thead th {
-  font-size: 10px; font-weight: 700; color: var(--text-secondary);
-  text-transform: uppercase; letter-spacing: 0.06em;
-  padding: 12px 13px 9px; text-align: left;
-  position: sticky; top: 0; background: var(--card);
-  border-bottom: 1px solid var(--border); z-index: 1;
+font-size: 10px; font-weight: 700; color: var(–text-secondary);
+text-transform: uppercase; letter-spacing: 0.06em;
+padding: 12px 13px 9px; text-align: left;
+position: sticky; top: 0; background: var(–card);
+border-bottom: 1px solid var(–border); z-index: 1;
 }
 thead th:nth-child(3) { text-align: right; }
 thead th:last-child { text-align: center; }
-tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; }
+tbody tr { border-bottom: 1px solid var(–border); cursor: pointer; transition: background 0.12s; }
 tbody tr:last-child { border-bottom: none; }
-tbody tr:active { background: var(--bg); }
-tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); vertical-align: middle; }
+tbody tr:active { background: var(–bg); }
+tbody td { padding: 9px 13px; font-size: 13px; color: var(–text-primary); vertical-align: middle; }
 .td-date-day { font-size: 12px; font-weight: 500; }
-.td-date-sub { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+.td-date-sub { font-size: 11px; color: var(–text-secondary); margin-top: 1px; }
 .td-bean-name { font-size: 13px; font-weight: 500; line-height: 1.2; }
-.td-bean-type { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+.td-bean-type { font-size: 11px; color: var(–text-secondary); margin-top: 1px; }
 .td-ratio { text-align: right; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .td-ampel { text-align: center; }
-.ampel {
-  display: inline-flex; width: 24px; height: 24px;
-  border-radius: 50%; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 700;
-}
-.ampel.green { background: var(--green-bg); color: var(--green); }
-.ampel.yellow { background: var(--yellow-bg); color: var(--yellow); }
-.ampel.red { background: var(--red-bg); color: var(--red); }
-
+.ampel { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+.ampel.green { background: var(–green-bg); color: var(–green); }
+.ampel.yellow { background: var(–yellow-bg); color: var(–yellow); }
+.ampel.red { background: var(–red-bg); color: var(–red); }
 .ampel-icon { display: inline-flex; flex-direction: column; gap: 1.5px; margin-left: 3px; vertical-align: middle; }
 .ampel-icon span { display: block; width: 6px; height: 6px; border-radius: 50%; }
 
-.empty-state {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  height: 100%; gap: 8px; color: var(--text-secondary); padding: 32px;
-}
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 8px; color: var(–text-secondary); padding: 32px; }
 .empty-state-icon { font-size: 32px; opacity: 0.4; }
 .empty-state-text { font-size: 13px; font-weight: 500; text-align: center; }
 
-/* ── SHOT DETAIL ROW (aufklappbar) ── */
-.shot-detail-row { display: none; background: var(--bg); }
-.shot-detail-row.open { display: table-row; }
-.shot-detail-inner {
-  padding: 10px 13px 14px;
-  display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-}
-.shot-detail-cell { }
-.shot-detail-label {
-  font-size: 9px; font-weight: 700; color: var(--text-secondary);
-  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;
-}
-.shot-detail-val { font-size: 13px; font-weight: 500; color: var(--text-primary); }
-.shot-detail-note {
-  grid-column: 1 / -1;
-  font-size: 12px; color: var(--text-secondary);
-  font-style: italic; margin-top: 4px;
-  padding-top: 8px; border-top: 1px solid var(--border);
-}
-
 /* ── SCREEN 3: DASHBOARD ── */
-.dash-content {
-  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain; padding: 8px 16px;
-  padding-bottom: calc(16px + var(--safe-bottom)); min-height: 0;
-}
+.dash-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 8px 16px; padding-bottom: calc(16px + var(–safe-bottom)); min-height: 0; }
 .dash-content::-webkit-scrollbar { display: none; }
-
 .kpi-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-.kpi-card { background: var(--card); border-radius: 14px; padding: 11px 9px; box-shadow: var(--shadow); text-align: center; }
-.kpi-value { font-size: 20px; font-weight: 700; color: var(--text-primary); line-height: 1; }
-.kpi-label { font-size: 10px; color: var(--text-secondary); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+.kpi-card { background: var(–card); border-radius: 14px; padding: 11px 9px; box-shadow: var(–shadow); text-align: center; }
+.kpi-value { font-size: 20px; font-weight: 700; color: var(–text-primary); line-height: 1; }
+.kpi-label { font-size: 10px; color: var(–text-secondary); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
 .kpi-delta { font-size: 10px; font-weight: 600; margin-top: 4px; }
-.kpi-delta.up { color: var(--green); } .kpi-delta.down { color: var(--red); } .kpi-delta.neutral { color: var(--text-secondary); }
+.kpi-delta.up { color: var(–green); } .kpi-delta.down { color: var(–red); } .kpi-delta.neutral { color: var(–text-secondary); }
 .dash-section { margin-bottom: 14px; }
-.dash-section-title { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 17px; color: var(--text-primary); margin-bottom: 10px; }
-.chart-card { background: var(--card); border-radius: 18px; padding: 14px; box-shadow: var(--shadow); margin-bottom: 10px; }
-.chart-title { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+.dash-section-title { font-family: ‘DM Serif Display’, serif; font-style: italic; font-size: 17px; color: var(–text-primary); margin-bottom: 10px; }
+.chart-card { background: var(–card); border-radius: 18px; padding: 14px; box-shadow: var(–shadow); margin-bottom: 10px; }
+.chart-title { font-size: 11px; font-weight: 700; color: var(–text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
 .insight-card { border-radius: 16px; padding: 13px 14px; margin-bottom: 8px; display: flex; gap: 12px; align-items: flex-start; }
-.insight-card.tip { background: var(--accent-light); }
-.insight-card.warn { background: var(--yellow-bg); }
-.insight-card.good { background: var(--green-bg); }
+.insight-card.tip { background: var(–accent-light); }
+.insight-card.warn { background: var(–yellow-bg); }
+.insight-card.good { background: var(–green-bg); }
 .insight-icon { font-size: 20px; flex-shrink: 0; }
-.insight-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
-.insight-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.insight-title { font-size: 13px; font-weight: 600; color: var(–text-primary); margin-bottom: 3px; }
+.insight-text { font-size: 12px; color: var(–text-secondary); line-height: 1.5; }
 .chart-svg { width: 100%; overflow: visible; }
 .donut-row { display: flex; align-items: center; gap: 16px; }
 .donut-legend { display: flex; flex-direction: column; gap: 6px; }
 .donut-legend-item { display: flex; align-items: center; gap: 7px; }
 .donut-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.donut-legend-label { font-size: 12px; color: var(--text-secondary); }
-.donut-legend-val { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-left: 4px; }
-.chart-label { font-family: 'DM Sans', sans-serif; font-size: 9px; fill: var(--text-secondary); }
-.chart-val { font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 600; fill: var(--text-primary); }
-.chart-axis { stroke: var(--border); stroke-width: 1; }
+.donut-legend-label { font-size: 12px; color: var(–text-secondary); }
+.donut-legend-val { font-size: 12px; font-weight: 600; color: var(–text-primary); margin-left: 4px; }
+.chart-label { font-family: ‘DM Sans’, sans-serif; font-size: 9px; fill: var(–text-secondary); }
+.chart-val { font-family: ‘DM Sans’, sans-serif; font-size: 10px; font-weight: 600; fill: var(–text-primary); }
 .compare-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.compare-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); width: 60px; flex-shrink: 0; text-align: right; }
-.compare-track { flex: 1; height: 20px; background: var(--bg); border-radius: 10px; overflow: hidden; }
+.compare-label { font-size: 11px; font-weight: 500; color: var(–text-secondary); width: 60px; flex-shrink: 0; text-align: right; }
+.compare-track { flex: 1; height: 20px; background: var(–bg); border-radius: 10px; overflow: hidden; }
 .compare-fill { height: 100%; border-radius: 10px; display: flex; align-items: center; padding-right: 8px; justify-content: flex-end; }
 .compare-fill-val { font-size: 10px; font-weight: 700; color: white; }
 
-/* Puck Comparison Cards */
-.puck-compare-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
-.puck-compare-card {
-  border-radius: 14px; padding: 12px; text-align: center;
-}
-.puck-compare-card.with-puck { background: var(--green-bg); }
-.puck-compare-card.without-puck { background: var(--toggle-bg); }
-.puck-compare-pct { font-size: 22px; font-weight: 700; color: var(--text-primary); }
-.puck-compare-label { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
-.puck-compare-cnt { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
-
 /* ── SHEETS ── */
-.sheet-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.32); backdrop-filter: blur(4px);
-  z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.25s;
-}
+.sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.32); backdrop-filter: blur(4px); z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
 .sheet-overlay.open { opacity: 1; pointer-events: all; }
-
-.bottom-sheet {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: var(--card); border-radius: 28px 28px 0 0;
-  transform: translateY(100%);
-  transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
-  z-index: 101; max-height: 85vh;
-  display: flex; flex-direction: column;
-  padding-bottom: var(--safe-bottom);
-}
+.bottom-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: var(–card); border-radius: 28px 28px 0 0; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); z-index: 101; max-height: 85vh; display: flex; flex-direction: column; padding-bottom: var(–safe-bottom); }
 .sheet-overlay.open .bottom-sheet { transform: translateY(0); }
-
-.sheet-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; flex-shrink: 0; }
+.sheet-handle { width: 36px; height: 4px; background: var(–border); border-radius: 2px; margin: 12px auto 0; flex-shrink: 0; }
 .sheet-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px 0; flex-shrink: 0; }
-.sheet-title-text { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 20px; color: var(--text-primary); }
-.sheet-reset { font-size: 12px; font-weight: 500; color: var(--accent); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+.sheet-title-text { font-family: ‘DM Serif Display’, serif; font-style: italic; font-size: 20px; color: var(–text-primary); }
+.sheet-reset { font-size: 12px; font-weight: 500; color: var(–accent); background: none; border: none; cursor: pointer; font-family: ‘DM Sans’, sans-serif; }
 .sheet-body { overflow-y: auto; padding: 14px 20px 24px; flex: 1; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .sheet-body::-webkit-scrollbar { display: none; }
-
 .filter-section { margin-bottom: 18px; }
-.filter-section-label { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+.filter-section-label { font-size: 11px; font-weight: 700; color: var(–text-secondary); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
 .chip-group { display: flex; flex-wrap: wrap; gap: 7px; }
-.opt-chip {
-  padding: 7px 14px; background: var(--bg); border: 1.5px solid var(--border);
-  border-radius: 20px; font-family: 'DM Sans', sans-serif;
-  font-size: 13px; font-weight: 500; color: var(--text-secondary);
-  cursor: pointer; transition: all 0.15s;
-}
-.opt-chip.active { background: var(--toggle-active); border-color: var(--toggle-active); color: var(--bg); }
-.opt-chip.green-chip.active { background: var(--green); border-color: var(--green); color: white; }
-.opt-chip.yellow-chip.active { background: var(--yellow); border-color: var(--yellow); color: white; }
-.opt-chip.red-chip.active { background: var(--red); border-color: var(--red); color: white; }
-
-.apply-btn {
-  width: 100%; padding: 14px; background: var(--text-primary); color: var(--bg);
-  border: none; border-radius: 16px; font-family: 'DM Sans', sans-serif;
-  font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 4px;
-}
+.opt-chip { padding: 7px 14px; background: var(–bg); border: 1.5px solid var(–border); border-radius: 20px; font-family: ‘DM Sans’, sans-serif; font-size: 13px; font-weight: 500; color: var(–text-secondary); cursor: pointer; transition: all 0.15s; }
+.opt-chip.active { background: var(–toggle-active); border-color: var(–toggle-active); color: white; }
+.opt-chip.green-chip.active { background: var(–green); border-color: var(–green); }
+.opt-chip.yellow-chip.active { background: var(–yellow); border-color: var(–yellow); }
+.opt-chip.red-chip.active { background: var(–red); border-color: var(–red); }
+.apply-btn { width: 100%; padding: 14px; background: var(–text-primary); color: white; border: none; border-radius: 16px; font-family: ‘DM Sans’, sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 4px; }
 
 /* Bean Sheet */
 .bean-sheet-actions { display: flex; gap: 8px; padding: 0 20px 14px; flex-shrink: 0; }
-.sheet-action-btn {
-  flex: 1; padding: 12px 0; border-radius: 14px; border: none;
-  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
-  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
-}
-.btn-fill { background: var(--accent); color: white; }
-.btn-new { background: var(--toggle-bg); color: var(--text-secondary); }
-.sheet-divider { height: 1px; background: var(--border); margin: 0 20px 12px; flex-shrink: 0; }
-.sheet-section-label-sm { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 20px 10px; flex-shrink: 0; }
+.sheet-action-btn { flex: 1; padding: 12px 0; border-radius: 14px; border: none; font-family: ‘DM Sans’, sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.btn-fill { background: var(–accent); color: white; }
+.btn-new { background: var(–toggle-bg); color: var(–text-secondary); }
+.sheet-divider { height: 1px; background: var(–border); margin: 0 20px 12px; flex-shrink: 0; }
+.sheet-section-label-sm { font-size: 11px; font-weight: 600; color: var(–text-secondary); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 20px 10px; flex-shrink: 0; }
 .bean-list { padding: 0 12px 8px; overflow-y: auto; flex: 1; min-height: 0; -webkit-overflow-scrolling: touch; }
 .bean-list::-webkit-scrollbar { display: none; }
-
-.bean-slot {
-  display: flex; align-items: center; padding: 10px 8px;
-  border-radius: 14px; gap: 12px; min-height: 62px; transition: background 0.15s;
-}
+.bean-slot { display: flex; align-items: center; padding: 10px 8px; border-radius: 14px; gap: 12px; min-height: 62px; transition: background 0.15s; }
 .bean-slot.filled { cursor: pointer; }
-.bean-slot.filled:active { background: var(--bg); }
-.bean-slot.selected { background: var(--accent-light); }
-.bean-slot.empty { border: 1.5px dashed var(--border); justify-content: center; }
-.bean-dot { width: 36px; height: 36px; border-radius: 10px; background: var(--accent-light); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.bean-slot.filled:active { background: var(–bg); }
+.bean-slot.selected { background: var(–accent-light); }
+.bean-slot.empty { border: 1.5px dashed var(–border); justify-content: center; }
+.bean-dot { width: 36px; height: 36px; border-radius: 10px; background: var(–accent-light); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
 .bean-item-info { flex: 1; min-width: 0; }
-.bean-item-name { font-size: 14px; font-weight: 500; color: var(--text-primary); }
-.bean-item-sub { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
-.bean-item-stars { font-size: 11px; margin-top: 2px; color: var(--accent); }
-.bean-select-btn {
-  width: 32px; height: 32px; border-radius: 10px;
-  background: var(--bg); border: 1.5px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: var(--text-secondary);
-  font-size: 14px; font-weight: 700; flex-shrink: 0; transition: all 0.15s;
-}
-.bean-select-btn.selected { background: var(--accent); border-color: var(--accent); color: white; }
-.bean-slot-empty-text { font-size: 13px; color: var(--text-secondary); opacity: 0.5; }
+.bean-item-name { font-size: 14px; font-weight: 500; color: var(–text-primary); }
+.bean-item-sub { font-size: 12px; color: var(–text-secondary); margin-top: 1px; }
+.bean-item-stars { font-size: 11px; margin-top: 2px; color: var(–accent); }
+.bean-select-btn { width: 32px; height: 32px; border-radius: 10px; background: var(–bg); border: 1.5px solid var(–border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(–text-secondary); font-size: 14px; font-weight: 700; flex-shrink: 0; transition: all 0.15s; }
+.bean-select-btn.selected { background: var(–accent); border-color: var(–accent); color: white; }
+.bean-slot-empty-text { font-size: 13px; color: var(–text-secondary); opacity: 0.5; }
 
+/* Bean Detail */
 .star-row { display: flex; gap: 10px; justify-content: center; margin: 8px 0 16px; }
 .star-btn { font-size: 28px; cursor: pointer; opacity: 0.25; transition: all 0.15s; user-select: none; }
 .star-btn.active { opacity: 1; }
 
+/* Form fields */
 .form-field { margin-bottom: 13px; }
-.form-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; display: block; }
-.form-input {
-  width: 100%; padding: 11px 13px; background: var(--bg); border: 1.5px solid var(--border);
-  border-radius: 13px; font-family: 'DM Sans', sans-serif; font-size: 14px;
-  color: var(--text-primary); outline: none; transition: border-color 0.15s;
-  user-select: text; -webkit-user-select: text;
-}
-.form-input:focus { border-color: var(--accent); }
+.form-label { font-size: 11px; font-weight: 600; color: var(–text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; display: block; }
+.form-input { width: 100%; padding: 11px 13px; background: var(–bg); border: 1.5px solid var(–border); border-radius: 13px; font-family: ‘DM Sans’, sans-serif; font-size: 14px; color: var(–text-primary); outline: none; transition: border-color 0.15s; user-select: text; -webkit-user-select: text; }
+.form-input:focus { border-color: var(–accent); }
 
 .gram-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 12px 0; }
-.gram-btn {
-  padding: 16px 0; background: var(--bg); border: 2px solid var(--border);
-  border-radius: 14px; font-family: 'DM Sans', sans-serif;
-  font-size: 15px; font-weight: 600; color: var(--text-primary);
-  cursor: pointer; text-align: center; transition: all 0.15s;
-}
-.gram-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+.gram-btn { padding: 16px 0; background: var(–bg); border: 2px solid var(–border); border-radius: 14px; font-family: ‘DM Sans’, sans-serif; font-size: 15px; font-weight: 600; color: var(–text-primary); cursor: pointer; text-align: center; transition: all 0.15s; }
+.gram-btn.active { background: var(–accent-light); border-color: var(–accent); color: var(–accent); }
 
 /* Settings */
 .settings-section { margin-bottom: 20px; }
-.settings-section-title { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px; }
-.settings-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.settings-section-title { font-size: 11px; font-weight: 700; color: var(–text-secondary); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px; }
+.settings-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(–border); }
 .settings-row:last-child { border-bottom: none; }
-.settings-row-label { font-size: 14px; font-weight: 500; color: var(--text-primary); }
-.settings-row-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
-.settings-input {
-  background: var(--bg); border: 1.5px solid var(--border);
-  border-radius: 10px; padding: 6px 10px;
-  font-family: 'DM Sans', sans-serif; font-size: 13px;
-  color: var(--text-primary); outline: none; width: 90px; text-align: center;
-  user-select: text; -webkit-user-select: text;
-}
+.settings-row-label { font-size: 14px; font-weight: 500; color: var(–text-primary); }
+.settings-row-sub { font-size: 12px; color: var(–text-secondary); margin-top: 2px; }
+.settings-input { background: var(–bg); border: 1.5px solid var(–border); border-radius: 10px; padding: 6px 10px; font-family: ‘DM Sans’, sans-serif; font-size: 13px; color: var(–text-primary); outline: none; width: 90px; text-align: center; user-select: text; -webkit-user-select: text; }
 .settings-stepper { display: flex; align-items: center; gap: 8px; }
-.settings-stepper-btn {
-  width: 28px; height: 28px; border-radius: 8px; border: none;
-  background: var(--accent-light); color: var(--accent);
-  font-size: 16px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-}
-.settings-stepper-val { font-size: 14px; font-weight: 600; color: var(--text-primary); min-width: 36px; text-align: center; }
+.settings-stepper-btn { width: 28px; height: 28px; border-radius: 8px; border: none; background: var(–accent-light); color: var(–accent); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.settings-stepper-val { font-size: 14px; font-weight: 600; color: var(–text-primary); min-width: 36px; text-align: center; }
 .ampel-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-.ampel-field { background: var(--bg); border-radius: 12px; padding: 10px 12px; }
-.ampel-field-label { font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.ampel-field { background: var(–bg); border-radius: 12px; padding: 10px 12px; }
+.ampel-field-label { font-size: 10px; font-weight: 600; color: var(–text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
 .ampel-field-inputs { display: flex; align-items: center; gap: 6px; }
-.ampel-input {
-  width: 48px; padding: 5px 6px; background: var(--card); border: 1.5px solid var(--border);
-  border-radius: 8px; font-family: 'DM Sans', sans-serif;
-  font-size: 13px; text-align: center; color: var(--text-primary); outline: none;
-  user-select: text; -webkit-user-select: text;
-}
-.ampel-input:focus { border-color: var(--accent); }
-
+.ampel-input { width: 48px; padding: 5px 6px; background: var(–card); border: 1.5px solid var(–border); border-radius: 8px; font-family: ‘DM Sans’, sans-serif; font-size: 13px; text-align: center; color: var(–text-primary); outline: none; user-select: text; -webkit-user-select: text; }
+.ampel-input:focus { border-color: var(–accent); }
 .defaults-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
 .defaults-toggle .toggle-btn { padding: 7px 0; font-size: 13px; }
 
-/* ── AUTH SCREENS ── */
-#screen-auth {
-  background: var(--bg); display: none;
-  align-items: center; justify-content: center;
-  padding: 40px 32px;
-  padding-top: calc(40px + var(--safe-top));
-  padding-bottom: calc(40px + var(--safe-bottom));
-}
-#screen-auth.active { display: flex; flex-direction: column; }
-.auth-logo { font-size: 56px; margin-bottom: 24px; }
-.auth-title { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 32px; color: var(--text-primary); margin-bottom: 6px; }
-.auth-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 32px; }
-.auth-tabs { display: flex; gap: 6px; margin-bottom: 24px; background: var(--toggle-bg); border-radius: 14px; padding: 4px; }
-.auth-tab { flex: 1; padding: 9px; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; background: transparent; color: var(--text-secondary); transition: all 0.2s; }
-.auth-tab.active { background: var(--card); color: var(--text-primary); box-shadow: var(--shadow); }
-.auth-input {
-  width: 100%; padding: 14px 18px; background: var(--card); border: 2px solid var(--border);
-  border-radius: 16px; font-family: 'DM Sans', sans-serif; font-size: 16px;
-  color: var(--text-primary); outline: none; text-align: center; transition: border-color 0.2s; margin-bottom: 12px;
-  user-select: text; -webkit-user-select: text;
-}
-.auth-input:focus { border-color: var(--accent); }
-.auth-input.error { border-color: var(--red); animation: shake 0.4s ease; }
-.auth-btn {
-  width: 100%; padding: 16px; background: var(--text-primary); color: var(--bg);
-  border: none; border-radius: 16px; font-family: 'DM Sans', sans-serif;
-  font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 12px;
-}
-.auth-error { font-size: 12px; color: var(--red); margin-top: 4px; min-height: 18px; text-align: center; }
-.auth-divider { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
-.auth-divider-line { flex: 1; height: 1px; background: var(--border); }
-.auth-divider-text { font-size: 11px; color: var(--text-secondary); }
-
-@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
-
-/* ── TEAM FEED SCREEN ── */
-#screen-team { }
-.team-content {
-  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain; padding: 8px 16px;
-  padding-bottom: calc(16px + var(--safe-bottom)); min-height: 0;
-}
-.team-content::-webkit-scrollbar { display: none; }
-.team-shot-card {
-  background: var(--card); border-radius: 16px; padding: 13px 15px;
-  box-shadow: var(--shadow); margin-bottom: 8px;
-}
-.team-shot-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.team-user-badge { display: flex; align-items: center; gap: 7px; }
-.team-user-avatar {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: var(--accent-light); display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700; color: var(--accent);
-}
-.team-user-name { font-size: 12px; font-weight: 600; color: var(--text-primary); }
-.team-shot-date { font-size: 11px; color: var(--text-secondary); }
-.team-shot-bean { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; }
-.team-shot-meta { display: flex; gap: 10px; align-items: center; }
-.team-shot-ratio { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-.team-shot-details { font-size: 11px; color: var(--text-secondary); }
+/* Password screen */
+#screen-password { background: var(–bg); display: none; align-items: center; justify-content: center; padding: 40px 32px; padding-top: calc(40px + var(–safe-top)); padding-bottom: calc(40px + var(–safe-bottom)); }
+#screen-password.active { display: flex; flex-direction: column; }
+.pw-logo { font-size: 56px; margin-bottom: 24px; }
+.pw-title { font-family: ‘DM Serif Display’, serif; font-style: italic; font-size: 32px; color: var(–text-primary); margin-bottom: 6px; }
+.pw-sub { font-size: 13px; color: var(–text-secondary); margin-bottom: 32px; }
+.pw-input { width: 100%; padding: 14px 18px; background: var(–card); border: 2px solid var(–border); border-radius: 16px; font-family: ‘DM Sans’, sans-serif; font-size: 16px; color: var(–text-primary); outline: none; text-align: center; transition: border-color 0.2s; margin-bottom: 12px; user-select: text; -webkit-user-select: text; }
+.pw-input:focus { border-color: var(–accent); }
+.pw-input.error { border-color: var(–red); animation: shake 0.4s ease; }
+.pw-btn { width: 100%; padding: 16px; background: var(–text-primary); color: white; border: none; border-radius: 16px; font-family: ‘DM Sans’, sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; }
+.pw-error { font-size: 12px; color: var(–red); margin-top: 8px; min-height: 18px; text-align: center; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }
 
 /* Popup */
-.popup-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
-  backdrop-filter: blur(6px); z-index: 200;
-  display: none; align-items: center; justify-content: center; padding: 32px;
-}
+.popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(6px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 32px; }
 .popup-overlay.open { display: flex; }
-.popup-card {
-  background: var(--card); border-radius: 24px; padding: 28px 24px;
-  width: 100%; text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,0.2);
-}
+.popup-card { background: var(–card); border-radius: 24px; padding: 28px 24px; width: 100%; text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,0.2); }
 .popup-icon { font-size: 40px; margin-bottom: 12px; }
-.popup-title { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 22px; color: var(--text-primary); margin-bottom: 8px; }
-.popup-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 20px; }
+.popup-title { font-family: ‘DM Serif Display’, serif; font-style: italic; font-size: 22px; color: var(–text-primary); margin-bottom: 8px; }
+.popup-text { font-size: 13px; color: var(–text-secondary); line-height: 1.5; margin-bottom: 20px; }
 .popup-btns { display: flex; gap: 10px; }
-.popup-btn { flex: 1; padding: 13px; border: none; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
-.popup-btn-later { background: var(--bg); color: var(--text-secondary); }
-.popup-btn-done { background: var(--green); color: white; }
+.popup-btn { flex: 1; padding: 13px; border: none; border-radius: 14px; font-family: ‘DM Sans’, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
+.popup-btn-later { background: var(–bg); color: var(–text-secondary); }
+.popup-btn-done { background: var(–green); color: white; }
 
-/* Share toggle in shot log */
-.share-row { display: flex; align-items: center; justify-content: space-between; }
-.share-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
-.share-sub { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+/* Sync indicator */
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(–green); display: inline-block; margin-left: 4px; transition: background 0.3s; }
+.sync-dot.syncing { background: var(–yellow); animation: pulse 1s infinite; }
+.sync-dot.error { background: var(–red); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* Shot Detail Sheet */
+.shot-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.shot-detail-item { background: var(–bg); border-radius: 12px; padding: 10px 12px; }
+.shot-detail-label { font-size: 10px; font-weight: 600; color: var(–text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.shot-detail-value { font-size: 16px; font-weight: 600; color: var(–text-primary); }
+.shot-detail-unit { font-size: 11px; color: var(–text-secondary); font-weight: 400; }
+.shot-detail-note { background: var(–bg); border-radius: 12px; padding: 12px; font-size: 13px; color: var(–text-secondary); line-height: 1.5; margin-bottom: 16px; }
 </style>
+
 </head>
 <body>
 <div id="app">
 
-  <!-- ══ AUTH SCREEN ══ -->
-  <div class="screen active" id="screen-auth">
-    <div class="auth-logo">☕</div>
-    <div class="auth-title">Espresso Tracker</div>
-    <div class="auth-sub" id="auth-sub">Einloggen oder registrieren</div>
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tab-login">Einloggen</button>
-      <button class="auth-tab" id="tab-register">Registrieren</button>
-    </div>
-    <input class="auth-input" type="email" id="auth-email" placeholder="E-Mail" autocomplete="email">
-    <input class="auth-input" type="password" id="auth-password" placeholder="Passwort" autocomplete="current-password">
-    <div id="auth-name-wrap" style="display:none; width:100%;">
-      <input class="auth-input" type="text" id="auth-name" placeholder="Dein Name (z.B. Samuel)" autocomplete="name">
-    </div>
-    <button class="auth-btn" id="auth-btn">Einloggen</button>
-    <div class="auth-error" id="auth-error"></div>
-    <div style="margin-top:16px; font-size:12px; color:var(--text-secondary); text-align:center;">
-      Offline-Modus: <span id="offline-mode-link" style="color:var(--accent);cursor:pointer;font-weight:500;">Ohne Account fortfahren →</span>
-    </div>
+  <!-- ══ PASSWORD SCREEN ══ -->
+
+  <div class="screen active" id="screen-password">
+    <div class="pw-logo">☕</div>
+    <div class="pw-title">Espresso Tracker</div>
+    <div class="pw-sub">Bitte Passwort eingeben</div>
+    <input class="pw-input" type="password" id="pw-input" placeholder="Passwort" autocomplete="current-password">
+    <button class="pw-btn" id="pw-btn">Entsperren</button>
+    <div class="pw-error" id="pw-error"></div>
   </div>
 
   <!-- ══ SCREEN 1: SHOT LOG ══ -->
+
   <div class="screen" id="screen-log">
     <div class="top-bar">
       <div class="top-bar-left">
         <button class="icon-btn" id="settings-btn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
-        <div class="sync-dot" id="sync-dot" title="Sync-Status"></div>
       </div>
       <div class="top-bar-center">
-        <h1>Shot Log</h1>
+        <h1>Shot Log <span class="sync-dot" id="sync-dot"></span></h1>
         <p id="current-date"></p>
       </div>
       <div class="top-bar-right">
@@ -682,102 +433,95 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
       </div>
     </div>
 
-    <div class="log-scroll">
-      <div class="card">
-        <div class="card-label">Bohne</div>
-        <div class="bean-row">
-          <div>
-            <div class="bean-name" id="selected-bean-name"></div>
-            <div class="bean-sub" id="selected-bean-sub"></div>
-          </div>
-          <button class="bean-change" id="open-sheet-btn">Ändern</button>
-        </div>
+```
+<div class="log-scroll">
+  <div class="card">
+    <div class="card-label">Bohne</div>
+    <div class="bean-row">
+      <div>
+        <div class="bean-name" id="selected-bean-name">–</div>
+        <div class="bean-sub" id="selected-bean-sub"></div>
       </div>
-
-      <div class="two-col">
-        <div class="card">
-          <div class="card-label">Bezug</div>
-          <div class="toggle-group" id="bezug-toggle">
-            <button class="toggle-btn">Single</button>
-            <button class="toggle-btn active">Double</button>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-label">Siebträger</div>
-          <div class="toggle-group" id="sieb-toggle">
-            <button class="toggle-btn">Normal</button>
-            <button class="toggle-btn active">Bodenlos</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="two-col">
-        <div class="stepper-card">
-          <div class="stepper-label">Dosis</div>
-          <div class="stepper" id="dosis-stepper" data-step="0.5" data-unit="g" data-dec="1">
-            <button class="stepper-btn">−</button>
-            <span class="stepper-value">18<span class="stepper-unit">g</span></span>
-            <button class="stepper-btn">+</button>
-          </div>
-        </div>
-        <div class="stepper-card">
-          <div class="stepper-label-row">
-            <span class="stepper-label">Durchlauf</span>
-            <span class="auto-badge manual" id="timer-mode-badge">MANUELL</span>
-          </div>
-          <div class="stepper" id="durchlauf-stepper" data-step="1" data-unit="s" data-dec="0">
-            <button class="stepper-btn">−</button>
-            <span class="stepper-value">28<span class="stepper-unit">s</span></span>
-            <button class="stepper-btn">+</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="stepper-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
-          <div class="stepper-label" style="margin-bottom:0">Espresso</div>
-          <span class="ratio-chip" id="ratio-chip">1 : 2.0 Ratio</span>
-        </div>
-        <div class="stepper" id="espresso-stepper" data-step="0.5" data-unit="g" data-dec="1">
-          <button class="stepper-btn">−</button>
-          <span class="stepper-value">36<span class="stepper-unit">g</span></span>
-          <button class="stepper-btn">+</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="puck-row">
-          <div>
-            <div class="puck-title">Puck Screen</div>
-            <div class="puck-sub" id="puck-sub">Verwendet</div>
-          </div>
-          <div class="ios-toggle" id="puck-toggle"></div>
-        </div>
-      </div>
-
-      <!-- Team Share Toggle -->
-      <div class="card" id="share-card" style="display:none;">
-        <div class="share-row">
-          <div>
-            <div class="share-title">Im Team teilen</div>
-            <div class="share-sub" id="share-sub">Shot für alle sichtbar</div>
-          </div>
-          <div class="ios-toggle off" id="share-toggle"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-label">Notiz</div>
-        <textarea class="notes-input" id="notes-input" placeholder="Frucht, Säure, Süße … (optional)"></textarea>
-      </div>
-    </div>
-
-    <div class="save-wrap">
-      <button class="save-btn" id="save-btn">Shot speichern</button>
+      <button class="bean-change" id="open-sheet-btn">Ändern</button>
     </div>
   </div>
 
+  <div class="two-col">
+    <div class="card">
+      <div class="card-label">Bezug</div>
+      <div class="toggle-group" id="bezug-toggle">
+        <button class="toggle-btn">Single</button>
+        <button class="toggle-btn active">Double</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Siebträger</div>
+      <div class="toggle-group" id="sieb-toggle">
+        <button class="toggle-btn">Normal</button>
+        <button class="toggle-btn active">Bodenlos</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="stepper-card">
+      <div class="stepper-label">Dosis</div>
+      <div class="stepper" id="dosis-stepper" data-step="0.5" data-unit="g" data-dec="1">
+        <button class="stepper-btn">−</button>
+        <span class="stepper-value">18<span class="stepper-unit">g</span></span>
+        <button class="stepper-btn">+</button>
+      </div>
+    </div>
+    <div class="stepper-card">
+      <div class="stepper-label-row">
+        <span class="stepper-label">Durchlauf</span>
+        <span class="auto-badge manual" id="timer-mode-badge">MANUELL</span>
+      </div>
+      <div class="stepper" id="durchlauf-stepper" data-step="1" data-unit="s" data-dec="0">
+        <button class="stepper-btn">−</button>
+        <span class="stepper-value">28<span class="stepper-unit">s</span></span>
+        <button class="stepper-btn">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stepper-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+      <div class="stepper-label" style="margin-bottom:0">Espresso</div>
+      <span class="ratio-chip" id="ratio-chip">1 : 2.0 Ratio</span>
+    </div>
+    <div class="stepper" id="espresso-stepper" data-step="0.5" data-unit="g" data-dec="1">
+      <button class="stepper-btn">−</button>
+      <span class="stepper-value">36<span class="stepper-unit">g</span></span>
+      <button class="stepper-btn">+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="puck-row">
+      <div>
+        <div class="puck-title">Puck Screen</div>
+        <div class="puck-sub" id="puck-sub">Verwendet</div>
+      </div>
+      <div class="ios-toggle" id="puck-toggle"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Notiz</div>
+    <textarea class="notes-input" id="notes-input" placeholder="Frucht, Säure, Süße … (optional)"></textarea>
+  </div>
+</div>
+
+<div class="save-wrap">
+  <button class="save-btn" id="save-btn">Shot speichern</button>
+</div>
+```
+
+  </div>
+
   <!-- ══ SCREEN 2: VERLAUF ══ -->
+
   <div class="screen" id="screen-verlauf">
     <div class="top-bar">
       <div class="top-bar-left">
@@ -787,48 +531,58 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
         <h1>Verlauf</h1>
         <p id="verlauf-sub">0 Shots</p>
       </div>
-      <div class="top-bar-right" style="flex-direction:column;align-items:flex-end;gap:6px;">
+      <div class="top-bar-right">
         <button class="nav-btn" id="to-dashboard-btn">Dashboard →</button>
-        <button class="filter-btn" id="open-filter-verlauf-btn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-          <div class="filter-badge" id="filter-badge-verlauf">0</div>
-        </button>
       </div>
     </div>
-    <div class="verlauf-content">
-      <div class="filter-bar">
-        <div class="filter-scroll" id="active-filter-chips">
-          <span style="font-size:12px;color:var(--text-secondary);align-self:center;white-space:nowrap;">Alle Shots</span>
-        </div>
-      </div>
-      <div class="stats-strip">
-        <div class="stat-card"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Shots</div></div>
-        <div class="stat-card"><div class="stat-value" id="stat-avg-ratio">–</div><div class="stat-label">Ø Ratio</div></div>
-        <div class="stat-card"><div class="stat-value" id="stat-green-pct">–</div><div class="stat-label">🟢 Quote</div></div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Datum</th>
-              <th>Bohne</th>
-              <th style="text-align:right">Ratio</th>
-              <th style="text-align:center">
-                <span class="ampel-icon">
-                  <span style="background:var(--red)"></span>
-                  <span style="background:var(--yellow)"></span>
-                  <span style="background:var(--green)"></span>
-                </span>
-              </th>
-            </tr>
-          </thead>
-          <tbody id="shot-table-body"></tbody>
-        </table>
-      </div>
+
+```
+<div class="verlauf-content">
+  <!-- Stats oben -->
+  <div class="stats-strip">
+    <div class="stat-card"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Shots</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-avg-ratio">–</div><div class="stat-label">Ø Ratio</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-green-pct">–</div><div class="stat-label">🟢 Quote</div></div>
+  </div>
+
+  <!-- Filter bar darunter, Filter-Button neben der Tabellen-Überschrift -->
+  <div class="filter-bar">
+    <div class="filter-scroll" id="active-filter-chips">
+      <span style="font-size:12px;color:var(--text-secondary);align-self:center;white-space:nowrap;">Alle Shots</span>
     </div>
+    <button class="filter-btn" id="open-filter-verlauf-btn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      <div class="filter-badge" id="filter-badge-verlauf">0</div>
+    </button>
+  </div>
+
+  <!-- Tabelle -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Datum</th>
+          <th>Bohne</th>
+          <th style="text-align:right">Ratio</th>
+          <th style="text-align:center">
+            <span class="ampel-icon">
+              <span style="background:var(--red)"></span>
+              <span style="background:var(--yellow)"></span>
+              <span style="background:var(--green)"></span>
+            </span>
+          </th>
+        </tr>
+      </thead>
+      <tbody id="shot-table-body"></tbody>
+    </table>
+  </div>
+</div>
+```
+
   </div>
 
   <!-- ══ SCREEN 3: DASHBOARD ══ -->
+
   <div class="screen" id="screen-dashboard">
     <div class="top-bar">
       <div class="top-bar-left">
@@ -848,26 +602,10 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
     <div class="dash-content" id="dash-content"></div>
   </div>
 
-  <!-- ══ SCREEN 4: TEAM FEED ══ -->
-  <div class="screen" id="screen-team">
-    <div class="top-bar">
-      <div class="top-bar-left">
-        <button class="nav-btn" id="back-from-team">← Zurück</button>
-      </div>
-      <div class="top-bar-center">
-        <h1>Team</h1>
-        <p id="team-sub">Gemeinsame Shots</p>
-      </div>
-      <div class="top-bar-right"></div>
-    </div>
-    <div class="team-content" id="team-content">
-      <div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-text">Lade Team-Shots…</div></div>
-    </div>
-  </div>
-
-</div><!-- /app -->
+</div>
 
 <!-- ══ FILTER SHEET ══ -->
+
 <div class="sheet-overlay" id="filter-overlay">
   <div class="bottom-sheet">
     <div class="sheet-handle"></div>
@@ -928,7 +666,62 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
   </div>
 </div>
 
+<!-- ══ SHOT DETAIL SHEET ══ -->
+
+<div class="sheet-overlay" id="shot-detail-overlay">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title-text" id="shot-detail-title">Shot</span>
+      <button class="sheet-reset" id="delete-shot-btn" style="color:var(--red);">Löschen</button>
+    </div>
+    <div class="sheet-body">
+      <div id="shot-detail-ampel-row" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <span id="shot-detail-ampel" class="ampel green" style="width:32px;height:32px;font-size:14px;">●</span>
+        <span id="shot-detail-ampel-label" style="font-size:13px;font-weight:600;color:var(--text-primary);"></span>
+      </div>
+      <div class="shot-detail-grid">
+        <div class="shot-detail-item">
+          <div class="shot-detail-label">Dosis</div>
+          <div class="shot-detail-value" id="sd-dosis">–<span class="shot-detail-unit">g</span></div>
+        </div>
+        <div class="shot-detail-item">
+          <div class="shot-detail-label">Espresso</div>
+          <div class="shot-detail-value" id="sd-espresso">–<span class="shot-detail-unit">g</span></div>
+        </div>
+        <div class="shot-detail-item">
+          <div class="shot-detail-label">Ratio</div>
+          <div class="shot-detail-value" id="sd-ratio">–</div>
+        </div>
+        <div class="shot-detail-item">
+          <div class="shot-detail-label">Durchlauf</div>
+          <div class="shot-detail-value" id="sd-zeit">–<span class="shot-detail-unit">s</span></div>
+        </div>
+        <div class="shot-detail-item">
+          <div class="shot-detail-label">Bezug</div>
+          <div class="shot-detail-value" id="sd-type" style="font-size:13px;">–</div>
+        </div>
+        <div class="shot-detail-item">
+          <div class="shot-detail-label">Siebträger</div>
+          <div class="shot-detail-value" id="sd-basket" style="font-size:13px;">–</div>
+        </div>
+      </div>
+      <div id="sd-note-wrap" style="display:none;">
+        <div class="form-label" style="margin-bottom:8px;">Notiz</div>
+        <div class="shot-detail-note" id="sd-note"></div>
+      </div>
+      <div style="margin-top:4px;">
+        <div class="shot-detail-item" style="display:flex;gap:8px;align-items:center;">
+          <div class="shot-detail-label" style="margin-bottom:0;">Puck Screen</div>
+          <div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-left:auto;" id="sd-puck">–</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ BEAN SHEET ══ -->
+
 <div class="sheet-overlay" id="bean-sheet-overlay">
   <div class="bottom-sheet">
     <div class="sheet-handle"></div>
@@ -947,6 +740,7 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
 </div>
 
 <!-- ══ FILL BEAN SELECT SHEET ══ -->
+
 <div class="sheet-overlay" id="fill-select-overlay">
   <div class="bottom-sheet">
     <div class="sheet-handle"></div>
@@ -956,6 +750,7 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
 </div>
 
 <!-- ══ BEAN DETAIL SHEET ══ -->
+
 <div class="sheet-overlay" id="bean-detail-overlay">
   <div class="bottom-sheet">
     <div class="sheet-handle"></div>
@@ -976,6 +771,7 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
 </div>
 
 <!-- ══ GRAM SHEET ══ -->
+
 <div class="sheet-overlay" id="gram-sheet-overlay">
   <div class="bottom-sheet">
     <div class="sheet-handle"></div>
@@ -993,6 +789,7 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
 </div>
 
 <!-- ══ NEW BEAN SHEET ══ -->
+
 <div class="sheet-overlay" id="new-bean-overlay">
   <div class="bottom-sheet">
     <div class="sheet-handle"></div>
@@ -1024,26 +821,12 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
 </div>
 
 <!-- ══ SETTINGS SHEET ══ -->
+
 <div class="sheet-overlay" id="settings-overlay">
   <div class="bottom-sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-header">
-      <span class="sheet-title-text">Einstellungen</span>
-      <button class="sheet-reset" id="logout-btn" style="color:var(--red);">Ausloggen</button>
-    </div>
+    <div class="sheet-header"><span class="sheet-title-text">Einstellungen</span></div>
     <div class="sheet-body">
-
-      <div class="settings-section">
-        <div class="settings-section-title">Account</div>
-        <div class="settings-row">
-          <div><div class="settings-row-label">Eingeloggt als</div><div class="settings-row-sub" id="settings-user-email">–</div></div>
-        </div>
-        <div class="settings-row">
-          <div><div class="settings-row-label">Name</div></div>
-          <input class="settings-input" id="setting-display-name" type="text" placeholder="Dein Name">
-        </div>
-      </div>
-
       <div class="settings-section">
         <div class="settings-section-title">Equipment</div>
         <div class="settings-row">
@@ -1055,15 +838,6 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
           <input class="settings-input" id="setting-grinder" type="text" placeholder="z.B. Niche">
         </div>
       </div>
-
-      <div class="settings-section">
-        <div class="settings-section-title">Erscheinungsbild</div>
-        <div class="settings-row">
-          <div><div class="settings-row-label">Dark Mode</div></div>
-          <div class="ios-toggle off" id="setting-darkmode"></div>
-        </div>
-      </div>
-
       <div class="settings-section">
         <div class="settings-section-title">Standardwerte</div>
         <div class="defaults-toggle">
@@ -1117,7 +891,6 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
           </div>
         </div>
       </div>
-
       <div class="settings-section">
         <div class="settings-section-title">Auto-Timer</div>
         <div class="settings-row">
@@ -1125,7 +898,6 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
           <div class="ios-toggle off" id="setting-autotimer"></div>
         </div>
       </div>
-
       <div class="settings-section">
         <div class="settings-section-title">Reinigungserinnerung</div>
         <div class="settings-row">
@@ -1141,7 +913,6 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
           </div>
         </div>
       </div>
-
       <div class="settings-section">
         <div class="settings-section-title">Ampel-Grenzen</div>
         <div class="ampel-settings-grid">
@@ -1180,7 +951,6 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
         </div>
         <button class="apply-btn" id="save-ampel-btn" style="margin-top:12px;background:var(--accent);">Grenzen speichern</button>
       </div>
-
       <div class="settings-section">
         <div class="settings-section-title">Einheit</div>
         <div class="settings-row">
@@ -1191,28 +961,18 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
           </div>
         </div>
       </div>
-
       <div class="settings-section">
         <div class="settings-section-title">Daten</div>
         <button class="apply-btn" id="export-csv-btn" style="background:var(--toggle-active);margin-bottom:10px;">📥 CSV exportieren</button>
         <button class="apply-btn" id="import-csv-btn" style="background:var(--accent);">📤 CSV importieren</button>
         <input type="file" id="import-file-input" accept=".csv" style="display:none;">
       </div>
-
     </div>
   </div>
 </div>
 
-<!-- ══ SHOT DETAIL SHEET ══ -->
-<div class="sheet-overlay" id="shot-detail-overlay">
-  <div class="bottom-sheet">
-    <div class="sheet-handle"></div>
-    <div style="font-family:'DM Serif Display',serif;font-style:italic;font-size:20px;color:var(--text-primary);padding:14px 20px 6px;flex-shrink:0;" id="shot-detail-title">Shot Details</div>
-    <div class="sheet-body" id="shot-detail-body"></div>
-  </div>
-</div>
-
 <!-- ══ CLEANING POPUP ══ -->
+
 <div class="popup-overlay" id="cleaning-popup">
   <div class="popup-card">
     <div class="popup-icon">🧹</div>
@@ -1229,162 +989,251 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
 'use strict';
 
 // ══════════════════════════════════════════════
-// SUPABASE CONFIG
+// SUPABASE SETUP
 // ══════════════════════════════════════════════
-const SUPABASE_URL = 'https://pcbvugqzvhkmubpepxjw.supabase.co';
+const SUPABASE_URL = 'https://ieswqwqagdxmghkwseze.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imllc3dxd3FhZ2R4bWdoa3dzZXplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NjYyNDMsImV4cCI6MjA4NzA0MjI0M30.VrYDrr4YwCXMW7ZjJ-P0jqkBh5XAMCPi_CqNExrzcwk';
 
-// Simple Supabase client (no npm needed)
-const sb = {
-  headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
-  token: null,
+// Note: Replace SUPABASE_KEY with your actual anon/publishable JWT key from Supabase dashboard
+// The key format must be the full JWT, not the sb_publishable_ prefix format
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  setToken(t) {
-    this.token = t;
-    this.headers['Authorization'] = `Bearer ${t || SUPABASE_KEY}`;
-  },
-
-  async req(method, path, body) {
-    try {
-      const r = await fetch(`${SUPABASE_URL}${path}`, {
-        method, headers: this.headers,
-        body: body ? JSON.stringify(body) : undefined
-      });
-      const data = r.headers.get('content-type')?.includes('json') ? await r.json() : {};
-      return { ok: r.ok, status: r.status, data };
-    } catch(e) {
-      return { ok: false, status: 0, data: {}, offline: true };
-    }
-  },
-
-  async signUp(email, password, name) {
-    const r = await this.req('POST', '/auth/v1/signup', { email, password, data: { display_name: name } });
-    if (r.ok && r.data.access_token) this.setToken(r.data.access_token);
-    return r;
-  },
-
-  async signIn(email, password) {
-    const r = await this.req('POST', '/auth/v1/token?grant_type=password', { email, password });
-    if (r.ok && r.data.access_token) {
-      this.setToken(r.data.access_token);
-      saveLocal('sb_token', r.data.access_token);
-      saveLocal('sb_refresh', r.data.refresh_token);
-      saveLocal('sb_user', JSON.stringify(r.data.user));
-    }
-    return r;
-  },
-
-  async signOut() {
-    await this.req('POST', '/auth/v1/logout');
-    this.setToken(null);
-    localStorage.removeItem('sb_token');
-    localStorage.removeItem('sb_refresh');
-    localStorage.removeItem('sb_user');
-  },
-
-  async refreshSession() {
-    const refresh = loadLocal('sb_refresh');
-    if (!refresh) return false;
-    const r = await this.req('POST', '/auth/v1/token?grant_type=refresh_token', { refresh_token: refresh });
-    if (r.ok && r.data.access_token) {
-      this.setToken(r.data.access_token);
-      saveLocal('sb_token', r.data.access_token);
-      saveLocal('sb_refresh', r.data.refresh_token);
-      return true;
-    }
-    return false;
-  },
-
-  // DB helpers
-  async select(table, filter = '') {
-    return this.req('GET', `/rest/v1/${table}?${filter}&order=created_at.desc`);
-  },
-  async insert(table, row) {
-    return this.req('POST', `/rest/v1/${table}`, row);
-  },
-  async update(table, id, row) {
-    return this.req('PATCH', `/rest/v1/${table}?id=eq.${id}`, row);
-  },
-  async upsert(table, row, onConflict = 'id') {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?on_conflict=${onConflict}`, {
-      method: 'POST',
-      headers: { ...this.headers, 'Prefer': 'resolution=merge-duplicates' },
-      body: JSON.stringify(row)
-    });
-    return { ok: r.ok, data: r.ok ? await r.json().catch(()=>{}) : {} };
-  },
-  async delete(table, id) {
-    return this.req('DELETE', `/rest/v1/${table}?id=eq.${id}`);
+// ── Device ID (persists in localStorage as fallback identifier) ──
+function getDeviceId() {
+  let id = localStorage.getItem('espresso_device_id');
+  if (!id) {
+    id = 'dev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+    localStorage.setItem('espresso_device_id', id);
   }
-};
+  return id;
+}
+const DEVICE_ID = getDeviceId();
+
+// ── Sync indicator ──
+function setSyncState(state) {
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  dot.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
+}
 
 // ══════════════════════════════════════════════
-// TOUCH / ZOOM PREVENTION
+// PREVENT DOUBLE-TAP ZOOM
 // ══════════════════════════════════════════════
 document.addEventListener('touchmove', e => {
-  if (!e.target.closest('.log-scroll,.dash-content,.table-wrap,.sheet-body,.bean-list,.team-content')) e.preventDefault();
+  if (!e.target.closest('.log-scroll, .dash-content, .table-wrap, .sheet-body, .bean-list, .fill-bean-list')) {
+    e.preventDefault();
+  }
 }, { passive: false });
 document.addEventListener('gesturestart', e => e.preventDefault(), { passive: false });
 document.addEventListener('gesturechange', e => e.preventDefault(), { passive: false });
 
 // ══════════════════════════════════════════════
-// LOCAL STORAGE
+// PASSWORD
+// ══════════════════════════════════════════════
+const PW_HASH = '386be7b039782f54062ce0827b14c23a13abae3248bf6e71dbfbeb5b5b103d94';
+const AUTH_KEY = 'espresso_auth_v1';
+
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function checkPassword() {
+  const val = document.getElementById('pw-input').value;
+  const hash = await sha256(val);
+  if (hash === PW_HASH) {
+    localStorage.setItem(AUTH_KEY, '1');
+    showScreen('screen-log');
+    initApp();
+  } else {
+    const inp = document.getElementById('pw-input');
+    inp.classList.add('error');
+    document.getElementById('pw-error').textContent = 'Falsches Passwort';
+    setTimeout(() => inp.classList.remove('error'), 500);
+  }
+}
+
+document.getElementById('pw-btn').addEventListener('click', checkPassword);
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkPassword(); });
+
+if (localStorage.getItem(AUTH_KEY) === '1') {
+  showScreen('screen-log');
+  initApp();
+}
+
+// ══════════════════════════════════════════════
+// LOCAL CACHE (fallback + fast reads)
 // ══════════════════════════════════════════════
 function loadLocal(key, def) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; }
 }
 function saveLocal(key, val) {
-  try { localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val)); } catch(e) {} }
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+}
 
-let beans = loadLocal('espresso_beans', [
-  {id: crypto.randomUUID(), name:"Gardelli", sub:"Ethiopia Guji · Hell", emoji:"🫘", stars:0, total_grams:0},
-  {id: crypto.randomUUID(), name:"The Barn", sub:"Colombia · Mittel", emoji:"☕", stars:0, total_grams:0},
-  {id: crypto.randomUUID(), name:"Five Elephant", sub:"Kenya · Hell", emoji:"🌿", stars:0, total_grams:0},
+let beans = loadLocal('espresso_beans_v2', [
+  {id: Date.now(), name:"Gardelli", sub:"Ethiopia Guji · Hell", emoji:"🫘", stars:0, totalGrams:0},
+  {id: Date.now()+1, name:"The Barn", sub:"Colombia · Mittel", emoji:"☕", stars:0, totalGrams:0},
+  {id: Date.now()+2, name:"Five Elephant", sub:"Kenya · Hell", emoji:"🌿", stars:0, totalGrams:0},
 ]);
-
-let shots = loadLocal('espresso_shots', []).map(s => ({...s, date: new Date(s.shot_date || s.date)}));
-
-let settings = loadLocal('espresso_settings', {
-  machine: '', grinder: '', autoTimer: false,
+let shots = loadLocal('espresso_shots_v2', []).map(s => ({...s, date: new Date(s.date)}));
+let settings = loadLocal('espresso_settings_v2', {
+  machine: '', grinder: '',
+  autoTimer: false,
   cleaningActive: false, cleaningEvery: 20, cleaningCounter: 0,
   defaultsSingle: { dosis: 14, zeit: 25, espresso: 25 },
   defaultsDouble: { dosis: 18, zeit: 28, espresso: 36 },
-  unit: 'g', darkMode: false,
+  unit: 'g',
   ampel: { ratioGMin:1.8, ratioGMax:2.8, zeitGMin:20, zeitGMax:30, ratioYMin:1.4, ratioYMax:3.0, zeitYMin:18, zeitYMax:35 }
 });
-
-// Offline sync queue
-let syncQueue = loadLocal('espresso_sync_queue', []);
-
-function persistBeans() { saveLocal('espresso_beans', beans); }
-function persistShots() { saveLocal('espresso_shots', shots.map(s=>({...s, shot_date: s.date instanceof Date ? s.date.toISOString() : s.date}))); }
-function persistSettings() { saveLocal('espresso_settings', settings); }
-function persistQueue() { saveLocal('espresso_sync_queue', syncQueue); }
+let selectedBeanId = loadLocal('espresso_selected_bean_v2', null);
 
 // ══════════════════════════════════════════════
-// AUTH STATE
+// SUPABASE DB OPERATIONS
 // ══════════════════════════════════════════════
-let currentUser = null;
-let offlineMode = false;
+async function dbLoadAll() {
+  setSyncState('syncing');
+  try {
+    const [beansRes, shotsRes, settingsRes] = await Promise.all([
+      db.from('beans').select('*').eq('device_id', DEVICE_ID).order('created_at'),
+      db.from('shots').select('*').eq('device_id', DEVICE_ID).order('shot_date', { ascending: false }),
+      db.from('settings').select('*').eq('device_id', DEVICE_ID).maybeSingle()
+    ]);
 
-function getSavedUser() {
-  try { return JSON.parse(loadLocal('sb_user', 'null')); } catch(e) { return null; }
+    if (beansRes.data && beansRes.data.length > 0) {
+      beans = beansRes.data.map(b => ({
+        id: b.bean_id, name: b.name, sub: b.sub,
+        emoji: b.emoji, stars: b.stars, totalGrams: b.total_grams
+      }));
+      saveLocal('espresso_beans_v2', beans);
+    } else if (beans.length > 0) {
+      await dbSaveAllBeans();
+    }
+
+    if (shotsRes.data && shotsRes.data.length > 0) {
+      shots = shotsRes.data.map(s => ({
+        id: s.id,
+        date: new Date(s.shot_date),
+        bean: s.bean, beanSub: s.bean_sub,
+        type: s.type, basket: s.basket,
+        puck: s.puck, dosis: parseFloat(s.dosis),
+        espresso: parseFloat(s.espresso), ratio: parseFloat(s.ratio),
+        zeit: s.zeit, note: s.note
+      }));
+      saveLocal('espresso_shots_v2', shots);
+    }
+
+    if (settingsRes.data) {
+      const r = settingsRes.data;
+      settings = {
+        machine: r.machine || '',
+        grinder: r.grinder || '',
+        autoTimer: r.auto_timer,
+        cleaningActive: r.cleaning_active,
+        cleaningEvery: r.cleaning_every,
+        cleaningCounter: r.cleaning_counter,
+        defaultsSingle: r.defaults_single,
+        defaultsDouble: r.defaults_double,
+        unit: r.unit,
+        ampel: r.ampel,
+      };
+      selectedBeanId = r.selected_bean_id;
+      saveLocal('espresso_settings_v2', settings);
+      saveLocal('espresso_selected_bean_v2', selectedBeanId);
+    } else {
+      await dbSaveSettings();
+    }
+
+    setSyncState('ok');
+  } catch(e) {
+    console.warn('Supabase load failed, using local cache:', e);
+    setSyncState('error');
+  }
 }
 
-// ══════════════════════════════════════════════
-// SYNC DOT
-// ══════════════════════════════════════════════
-function setSyncStatus(status) {
-  const dot = document.getElementById('sync-dot');
-  dot.className = 'sync-dot ' + status;
+async function dbSaveAllBeans() {
+  try {
+    const rows = beans.map(b => ({
+      device_id: DEVICE_ID, bean_id: b.id,
+      name: b.name, sub: b.sub, emoji: b.emoji,
+      stars: b.stars, total_grams: b.totalGrams
+    }));
+    await db.from('beans').upsert(rows, { onConflict: 'device_id,bean_id' });
+  } catch(e) { console.warn('Bean save failed:', e); }
 }
 
-// ══════════════════════════════════════════════
-// DARK MODE
-// ══════════════════════════════════════════════
-function applyDarkMode(on) {
-  document.body.classList.toggle('dark', on);
-  document.getElementById('theme-color-meta').content = on ? '#0F0E0C' : '#F2F0EB';
+async function dbSaveBean(bean) {
+  saveLocal('espresso_beans_v2', beans);
+  try {
+    await db.from('beans').upsert({
+      device_id: DEVICE_ID, bean_id: bean.id,
+      name: bean.name, sub: bean.sub, emoji: bean.emoji,
+      stars: bean.stars, total_grams: bean.totalGrams
+    }, { onConflict: 'device_id,bean_id' });
+  } catch(e) { console.warn('Bean upsert failed:', e); }
+}
+
+async function dbDeleteBean(beanId) {
+  saveLocal('espresso_beans_v2', beans);
+  try {
+    await db.from('beans').delete().eq('device_id', DEVICE_ID).eq('bean_id', beanId);
+  } catch(e) { console.warn('Bean delete failed:', e); }
+}
+
+async function dbSaveShot(shot) {
+  saveLocal('espresso_shots_v2', shots);
+  setSyncState('syncing');
+  try {
+    const { data } = await db.from('shots').insert({
+      device_id: DEVICE_ID,
+      shot_date: shot.date.toISOString(),
+      bean: shot.bean, bean_sub: shot.beanSub || '',
+      type: shot.type, basket: shot.basket,
+      puck: shot.puck, dosis: shot.dosis,
+      espresso: shot.espresso, ratio: shot.ratio,
+      zeit: shot.zeit, note: shot.note || ''
+    }).select().single();
+    if (data) {
+      shot.id = data.id;
+      saveLocal('espresso_shots_v2', shots);
+    }
+    setSyncState('ok');
+  } catch(e) {
+    console.warn('Shot save failed:', e);
+    setSyncState('error');
+  }
+}
+
+async function dbDeleteShot(shotId) {
+  saveLocal('espresso_shots_v2', shots);
+  try {
+    if (typeof shotId === 'number') {
+      await db.from('shots').delete().eq('id', shotId).eq('device_id', DEVICE_ID);
+    }
+  } catch(e) { console.warn('Shot delete failed:', e); }
+}
+
+async function dbSaveSettings() {
+  saveLocal('espresso_settings_v2', settings);
+  saveLocal('espresso_selected_bean_v2', selectedBeanId);
+  try {
+    await db.from('settings').upsert({
+      device_id: DEVICE_ID,
+      machine: settings.machine,
+      grinder: settings.grinder,
+      auto_timer: settings.autoTimer,
+      cleaning_active: settings.cleaningActive,
+      cleaning_every: settings.cleaningEvery,
+      cleaning_counter: settings.cleaningCounter,
+      defaults_single: settings.defaultsSingle,
+      defaults_double: settings.defaultsDouble,
+      unit: settings.unit,
+      ampel: settings.ampel,
+      selected_bean_id: selectedBeanId,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'device_id' });
+  } catch(e) { console.warn('Settings save failed:', e); }
 }
 
 // ══════════════════════════════════════════════
@@ -1408,8 +1257,8 @@ function getAmpel(r, z) {
 // ══════════════════════════════════════════════
 const DAYS = ['So','Mo','Di','Mi','Do','Fr','Sa'];
 const MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
-function fmtDate(d) { const dt = d instanceof Date ? d : new Date(d); return `${DAYS[dt.getDay()]}, ${dt.getDate()}. ${MONTHS[dt.getMonth()]}`; }
-function fmtTime(d) { const dt = d instanceof Date ? d : new Date(d); return dt.getHours().toString().padStart(2,'0') + ':' + dt.getMinutes().toString().padStart(2,'0'); }
+function fmtDate(d) { return `${DAYS[d.getDay()]}, ${d.getDate()}. ${MONTHS[d.getMonth()]}`; }
+function fmtTime(d) { return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0'); }
 function getKW(d) { const j = new Date(d.getFullYear(),0,1); return Math.ceil(((d-j)/86400000+j.getDay()+1)/7); }
 
 // ══════════════════════════════════════════════
@@ -1424,248 +1273,6 @@ document.getElementById('to-verlauf-btn').addEventListener('click', () => { rend
 document.getElementById('back-from-verlauf').addEventListener('click', () => showScreen('screen-log'));
 document.getElementById('to-dashboard-btn').addEventListener('click', () => { buildDashboard(); showScreen('screen-dashboard'); });
 document.getElementById('back-from-dashboard').addEventListener('click', () => showScreen('screen-verlauf'));
-document.getElementById('back-from-team').addEventListener('click', () => showScreen('screen-log'));
-
-// ══════════════════════════════════════════════
-// AUTH UI
-// ══════════════════════════════════════════════
-let authMode = 'login';
-
-document.getElementById('tab-login').addEventListener('click', () => {
-  authMode = 'login';
-  document.getElementById('tab-login').classList.add('active');
-  document.getElementById('tab-register').classList.remove('active');
-  document.getElementById('auth-name-wrap').style.display = 'none';
-  document.getElementById('auth-btn').textContent = 'Einloggen';
-  document.getElementById('auth-sub').textContent = 'Willkommen zurück';
-});
-
-document.getElementById('tab-register').addEventListener('click', () => {
-  authMode = 'register';
-  document.getElementById('tab-register').classList.add('active');
-  document.getElementById('tab-login').classList.remove('active');
-  document.getElementById('auth-name-wrap').style.display = 'block';
-  document.getElementById('auth-btn').textContent = 'Registrieren';
-  document.getElementById('auth-sub').textContent = 'Konto erstellen';
-});
-
-document.getElementById('auth-btn').addEventListener('click', async () => {
-  const email = document.getElementById('auth-email').value.trim();
-  const pw = document.getElementById('auth-password').value;
-  const name = document.getElementById('auth-name').value.trim();
-  const errEl = document.getElementById('auth-error');
-  errEl.textContent = '';
-
-  if (!email || !pw) { errEl.textContent = 'Bitte E-Mail und Passwort eingeben.'; return; }
-
-  document.getElementById('auth-btn').textContent = '…';
-
-  let r;
-  if (authMode === 'register') {
-    if (!name) { errEl.textContent = 'Bitte einen Namen eingeben.'; document.getElementById('auth-btn').textContent = 'Registrieren'; return; }
-    r = await sb.signUp(email, pw, name);
-    if (r.ok) {
-      errEl.style.color = 'var(--green)';
-      errEl.textContent = 'Bestätigungs-E-Mail gesendet! Bitte bestätigen, dann einloggen.';
-      document.getElementById('tab-login').click();
-      document.getElementById('auth-btn').textContent = 'Einloggen';
-      return;
-    }
-  } else {
-    r = await sb.signIn(email, pw);
-    if (r.ok) {
-      currentUser = r.data.user;
-      await startApp();
-      return;
-    }
-  }
-
-  const msg = r.data?.error_description || r.data?.msg || r.data?.message || 'Fehler beim Login.';
-  document.getElementById('auth-email').classList.add('error');
-  setTimeout(() => document.getElementById('auth-email').classList.remove('error'), 500);
-  errEl.style.color = 'var(--red)';
-  errEl.textContent = msg;
-  document.getElementById('auth-btn').textContent = authMode === 'login' ? 'Einloggen' : 'Registrieren';
-});
-
-document.getElementById('auth-password').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('auth-btn').click();
-});
-
-document.getElementById('offline-mode-link').addEventListener('click', () => {
-  offlineMode = true;
-  startApp();
-});
-
-// ══════════════════════════════════════════════
-// START APP
-// ══════════════════════════════════════════════
-async function startApp() {
-  // Show team share card only for logged in users
-  document.getElementById('share-card').style.display = currentUser ? 'block' : 'none';
-
-  // Load settings from Supabase if logged in
-  if (currentUser && !offlineMode) {
-    setSyncStatus('syncing');
-    await syncFromSupabase();
-    setSyncStatus('');
-    document.getElementById('settings-user-email').textContent = currentUser.email || '–';
-  } else {
-    setSyncStatus('offline');
-    document.getElementById('settings-user-email').textContent = offlineMode ? 'Offline-Modus' : '–';
-  }
-
-  applyDarkMode(settings.darkMode);
-  document.getElementById('setting-darkmode').classList.toggle('off', !settings.darkMode);
-
-  initApp();
-  showScreen('screen-log');
-
-  // Try to flush sync queue
-  if (currentUser && syncQueue.length > 0) flushSyncQueue();
-}
-
-// ══════════════════════════════════════════════
-// SUPABASE SYNC
-// ══════════════════════════════════════════════
-async function syncFromSupabase() {
-  if (!currentUser) return;
-
-  // Sync shots
-  const sr = await sb.select('shots', `user_id=eq.${currentUser.id}`);
-  if (sr.ok && Array.isArray(sr.data)) {
-    const remoteShots = sr.data.map(s => ({
-      ...s, date: new Date(s.shot_date),
-      bean: s.bean_name, beanSub: s.bean_sub,
-      zeit: s.zeit, puck: s.puck
-    }));
-    // Merge: prefer remote, keep local if not in remote
-    const remoteIds = new Set(remoteShots.map(s => s.id));
-    const localOnly = shots.filter(s => s.id && !remoteIds.has(s.id));
-    shots = [...remoteShots, ...localOnly].sort((a,b) => new Date(b.date) - new Date(a.date));
-    persistShots();
-  }
-
-  // Sync beans
-  const br = await sb.select('beans', `user_id=eq.${currentUser.id}`);
-  if (br.ok && Array.isArray(br.data) && br.data.length > 0) {
-    beans = br.data;
-    persistBeans();
-  }
-
-  // Sync profile/settings
-  const pr = await sb.select('profiles', `id=eq.${currentUser.id}`);
-  if (pr.ok && pr.data?.[0]) {
-    const p = pr.data[0];
-    settings.machine = p.machine || settings.machine;
-    settings.grinder = p.grinder || settings.grinder;
-    settings.unit = p.unit || settings.unit;
-    settings.darkMode = p.dark_mode ?? settings.darkMode;
-    settings.autoTimer = p.auto_timer ?? settings.autoTimer;
-    settings.cleaningActive = p.cleaning_active ?? settings.cleaningActive;
-    settings.cleaningEvery = p.cleaning_every ?? settings.cleaningEvery;
-    settings.cleaningCounter = p.cleaning_counter ?? settings.cleaningCounter;
-    if (p.defaults_single) settings.defaultsSingle = p.defaults_single;
-    if (p.defaults_double) settings.defaultsDouble = p.defaults_double;
-    if (p.ampel) settings.ampel = p.ampel;
-    persistSettings();
-  }
-}
-
-async function pushShotToSupabase(shot) {
-  if (!currentUser || offlineMode) return;
-  setSyncStatus('syncing');
-  const r = await sb.insert('shots', {
-    id: shot.id,
-    user_id: currentUser.id,
-    shot_date: shot.date instanceof Date ? shot.date.toISOString() : shot.date,
-    bean_name: shot.bean, bean_sub: shot.beanSub || '',
-    type: shot.type, basket: shot.basket,
-    puck: shot.puck, dosis: shot.dosis, espresso: shot.espresso,
-    ratio: shot.ratio, zeit: shot.zeit, note: shot.note || '',
-    is_public: shot.is_public || false
-  });
-  setSyncStatus(r.ok ? '' : 'error');
-  if (!r.ok && !r.offline) setSyncStatus('error');
-  if (r.offline) {
-    syncQueue.push({ type: 'shot', data: shot });
-    persistQueue();
-    setSyncStatus('offline');
-  }
-}
-
-async function pushBeanToSupabase(bean) {
-  if (!currentUser || offlineMode) return;
-  await sb.upsert('beans', { ...bean, user_id: currentUser.id }, 'id');
-}
-
-async function pushSettingsToSupabase() {
-  if (!currentUser || offlineMode) return;
-  await sb.upsert('profiles', {
-    id: currentUser.id,
-    machine: settings.machine, grinder: settings.grinder,
-    unit: settings.unit, dark_mode: settings.darkMode,
-    auto_timer: settings.autoTimer,
-    cleaning_active: settings.cleaningActive,
-    cleaning_every: settings.cleaningEvery,
-    cleaning_counter: settings.cleaningCounter,
-    defaults_single: settings.defaultsSingle,
-    defaults_double: settings.defaultsDouble,
-    ampel: settings.ampel
-  }, 'id');
-}
-
-async function flushSyncQueue() {
-  if (!currentUser || syncQueue.length === 0) return;
-  const failed = [];
-  for (const item of syncQueue) {
-    if (item.type === 'shot') {
-      const r = await pushShotToSupabase(item.data);
-      if (!r || r.offline) failed.push(item);
-    }
-  }
-  syncQueue = failed;
-  persistQueue();
-}
-
-// Team Feed
-async function loadTeamFeed() {
-  const el = document.getElementById('team-content');
-  if (!currentUser) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔒</div><div class="empty-state-text">Einloggen für Team-Feed</div></div>';
-    return;
-  }
-  el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-text">Lade…</div></div>';
-
-  // Need service role for this — use public policy instead
-  const r = await sb.select('shots', `is_public=eq.true&order=shot_date.desc&limit=50`);
-  if (!r.ok || !Array.isArray(r.data) || r.data.length === 0) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-text">Noch keine öffentlichen Shots. Teile deinen ersten!</div></div>';
-    return;
-  }
-  el.innerHTML = r.data.map(s => {
-    const cls = getAmpel(s.ratio, s.zeit || 27);
-    const initials = (s.user_id || '?').substring(0,2).toUpperCase();
-    const d = new Date(s.shot_date);
-    return `<div class="team-shot-card">
-      <div class="team-shot-header">
-        <div class="team-user-badge">
-          <div class="team-user-avatar">${initials}</div>
-          <div class="team-user-name">${s.display_name || 'Barista'}</div>
-        </div>
-        <div class="team-shot-date">${fmtDate(d)}</div>
-      </div>
-      <div class="team-shot-bean">${s.bean_name} · ${s.bean_sub || ''}</div>
-      <div class="team-shot-meta">
-        <span class="team-shot-ratio">1 : ${parseFloat(s.ratio).toFixed(2)}</span>
-        <span class="team-shot-details">${s.type} · ${s.dosis}g → ${s.espresso}g · ${s.zeit}s</span>
-        <span class="ampel ${cls}">●</span>
-      </div>
-      ${s.note ? `<div style="font-size:12px;color:var(--text-secondary);font-style:italic;margin-top:6px;">${s.note}</div>` : ''}
-    </div>`;
-  }).join('');
-  document.getElementById('team-sub').textContent = `${r.data.length} öffentliche Shots`;
-}
 
 // ══════════════════════════════════════════════
 // TOGGLES
@@ -1682,11 +1289,6 @@ document.querySelectorAll('.toggle-group').forEach(group => {
 document.getElementById('puck-toggle').addEventListener('click', function() {
   this.classList.toggle('off');
   document.getElementById('puck-sub').textContent = this.classList.contains('off') ? 'Nicht verwendet' : 'Verwendet';
-});
-
-document.getElementById('share-toggle').addEventListener('click', function() {
-  this.classList.toggle('off');
-  document.getElementById('share-sub').textContent = this.classList.contains('off') ? 'Nur für dich sichtbar' : 'Shot für alle sichtbar';
 });
 
 // ══════════════════════════════════════════════
@@ -1747,28 +1349,22 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   const shotType = document.querySelector('#bezug-toggle .toggle-btn.active')?.textContent?.trim() || 'Double';
   const basket = document.querySelector('#sieb-toggle .toggle-btn.active')?.textContent?.trim() || 'Bodenlos';
   const puck = !document.getElementById('puck-toggle').classList.contains('off');
-  const isPublic = !document.getElementById('share-toggle').classList.contains('off');
   const note = document.getElementById('notes-input').value;
 
-  const shot = {
-    id: crypto.randomUUID(),
+  const newShot = {
     date: new Date(),
     bean: document.getElementById('selected-bean-name').textContent,
     beanSub: document.getElementById('selected-bean-sub').textContent,
     type: shotType, basket, puck, dosis: d, espresso: e,
-    ratio: parseFloat(ratio.toFixed(2)), zeit: z, note,
-    is_public: isPublic
+    ratio: parseFloat(ratio.toFixed(2)), zeit: z, note
   };
 
-  shots.unshift(shot);
-  persistShots();
-
-  // Push to Supabase
-  await pushShotToSupabase(shot);
+  shots.unshift(newShot);
+  await dbSaveShot(newShot);
 
   if (settings.cleaningActive) {
     settings.cleaningCounter = (settings.cleaningCounter || 0) + 1;
-    persistSettings();
+    await dbSaveSettings();
     if (settings.cleaningCounter >= settings.cleaningEvery) showCleaningPopup();
   }
 
@@ -1785,18 +1381,17 @@ let activeFilters = {};
 
 function matchesFilters(s) {
   const now = new Date();
-  const sd = s.date instanceof Date ? s.date : new Date(s.date);
   if (activeFilters.time) {
     const v = activeFilters.time;
-    if (v==='today' && sd.toDateString() !== now.toDateString()) return false;
-    if (v==='week' && ((now-sd)/86400000 < 0 || (now-sd)/86400000 > 7)) return false;
-    if (v==='kw' && getKW(sd) !== getKW(now)) return false;
-    if (v==='month' && (sd.getMonth() !== now.getMonth() || sd.getFullYear() !== now.getFullYear())) return false;
-    if (v==='year' && sd.getFullYear() !== now.getFullYear()) return false;
-    if (v==='q1' && sd.getMonth() > 2) return false;
-    if (v==='q2' && (sd.getMonth() < 3 || sd.getMonth() > 5)) return false;
-    if (v==='q3' && (sd.getMonth() < 6 || sd.getMonth() > 8)) return false;
-    if (v==='q4' && sd.getMonth() < 9) return false;
+    if (v==='today' && s.date.toDateString() !== now.toDateString()) return false;
+    if (v==='week' && ((now-s.date)/86400000 < 0 || (now-s.date)/86400000 > 7)) return false;
+    if (v==='kw' && getKW(s.date) !== getKW(now)) return false;
+    if (v==='month' && (s.date.getMonth() !== now.getMonth() || s.date.getFullYear() !== now.getFullYear())) return false;
+    if (v==='year' && s.date.getFullYear() !== now.getFullYear()) return false;
+    if (v==='q1' && s.date.getMonth() > 2) return false;
+    if (v==='q2' && (s.date.getMonth() < 3 || s.date.getMonth() > 5)) return false;
+    if (v==='q3' && (s.date.getMonth() < 6 || s.date.getMonth() > 8)) return false;
+    if (v==='q4' && s.date.getMonth() < 9) return false;
   }
   if (activeFilters.ampel && getAmpel(s.ratio, s.zeit||27) !== activeFilters.ampel) return false;
   if (activeFilters.type && s.type !== activeFilters.type) return false;
@@ -1824,9 +1419,8 @@ function bindFilterChips() {
   document.querySelectorAll('.opt-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       const grp = chip.dataset.filter;
-      const wasActive = chip.classList.contains('active');
       document.querySelectorAll(`.opt-chip[data-filter="${grp}"]`).forEach(c => c.classList.remove('active'));
-      if (!wasActive) chip.classList.add('active');
+      chip.classList.toggle('active');
     });
   });
 }
@@ -1864,7 +1458,7 @@ document.getElementById('apply-filter-btn').addEventListener('click', () => {
 });
 
 // ══════════════════════════════════════════════
-// SHEETS
+// SHEET HELPERS
 // ══════════════════════════════════════════════
 function openSheet(id) { document.getElementById(id).classList.add('open'); }
 function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
@@ -1878,12 +1472,11 @@ document.querySelectorAll('.sheet-overlay').forEach(overlay => {
 // ══════════════════════════════════════════════
 // VERLAUF
 // ══════════════════════════════════════════════
-let openDetailIdx = null;
+let currentShotDetail = null;
 
 function renderVerlauf() {
   const filtered = shots.filter(matchesFilters);
   const tbody = document.getElementById('shot-table-body');
-  openDetailIdx = null;
 
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-state-icon">☕</div><div class="empty-state-text">Keine Shots gefunden</div></div></td></tr>`;
@@ -1891,42 +1484,25 @@ function renderVerlauf() {
     document.getElementById('stat-avg-ratio').textContent = '–';
     document.getElementById('stat-green-pct').textContent = '–';
     document.getElementById('verlauf-sub').textContent = '0 Shots';
-    updateActiveChips(); return;
+    updateActiveChips();
+    return;
   }
 
-  tbody.innerHTML = filtered.map((s, i) => {
+  tbody.innerHTML = filtered.map((s, idx) => {
     const cls = getAmpel(s.ratio, s.zeit||27);
-    const d = s.date instanceof Date ? s.date : new Date(s.date);
-    return `<tr class="shot-main-row" data-idx="${i}">
-      <td><div class="td-date-day">${fmtDate(d)}</div><div class="td-date-sub">${fmtTime(d)}</div></td>
+    return `<tr data-idx="${idx}">
+      <td><div class="td-date-day">${fmtDate(s.date)}</div><div class="td-date-sub">${fmtTime(s.date)}</div></td>
       <td><div class="td-bean-name">${s.bean}</div><div class="td-bean-type">${s.type} · ${s.beanSub||''}</div></td>
       <td class="td-ratio">1 : ${s.ratio.toFixed(2)}</td>
       <td class="td-ampel"><span class="ampel ${cls}">●</span></td>
-    </tr>
-    <tr class="shot-detail-row" id="detail-row-${i}">
-      <td colspan="4">
-        <div class="shot-detail-inner">
-          <div class="shot-detail-cell"><div class="shot-detail-label">Dosis</div><div class="shot-detail-val">${s.dosis}g</div></div>
-          <div class="shot-detail-cell"><div class="shot-detail-label">Espresso</div><div class="shot-detail-val">${s.espresso}g</div></div>
-          <div class="shot-detail-cell"><div class="shot-detail-label">Zeit</div><div class="shot-detail-val">${s.zeit}s</div></div>
-          <div class="shot-detail-cell"><div class="shot-detail-label">Siebträger</div><div class="shot-detail-val">${s.basket||'–'}</div></div>
-          <div class="shot-detail-cell"><div class="shot-detail-label">Puck Screen</div><div class="shot-detail-val">${s.puck ? '✓ Ja' : '✗ Nein'}</div></div>
-          <div class="shot-detail-cell"><div class="shot-detail-label">Ratio</div><div class="shot-detail-val">1 : ${s.ratio.toFixed(2)}</div></div>
-          ${s.note ? `<div class="shot-detail-note">💬 ${s.note}</div>` : ''}
-        </div>
-      </td>
     </tr>`;
   }).join('');
 
-  // Click to expand/collapse detail rows
-  tbody.querySelectorAll('.shot-main-row').forEach(row => {
+  // Click on row → Shot Detail
+  tbody.querySelectorAll('tr[data-idx]').forEach(row => {
     row.addEventListener('click', () => {
       const idx = parseInt(row.dataset.idx);
-      const detailRow = document.getElementById(`detail-row-${idx}`);
-      const wasOpen = detailRow.classList.contains('open');
-      // Close all
-      tbody.querySelectorAll('.shot-detail-row').forEach(r => r.classList.remove('open'));
-      if (!wasOpen) detailRow.classList.add('open');
+      openShotDetail(filtered[idx]);
     });
   });
 
@@ -1940,6 +1516,47 @@ function renderVerlauf() {
   updateActiveChips();
   updateFilterBadges();
 }
+
+// ── Shot Detail ──
+function openShotDetail(shot) {
+  currentShotDetail = shot;
+  const cls = getAmpel(shot.ratio, shot.zeit||27);
+  const labels = { green: '🟢 Grüner Shot', yellow: '🟡 Gelber Shot', red: '🔴 Roter Shot' };
+
+  document.getElementById('shot-detail-title').textContent = `${shot.bean} · ${fmtDate(shot.date)}`;
+  document.getElementById('shot-detail-ampel').className = `ampel ${cls}`;
+  document.getElementById('shot-detail-ampel-label').textContent = labels[cls];
+
+  document.getElementById('sd-dosis').innerHTML = `${shot.dosis}<span class="shot-detail-unit">g</span>`;
+  document.getElementById('sd-espresso').innerHTML = `${shot.espresso}<span class="shot-detail-unit">g</span>`;
+  document.getElementById('sd-ratio').textContent = `1 : ${shot.ratio.toFixed(2)}`;
+  document.getElementById('sd-zeit').innerHTML = `${shot.zeit||'–'}<span class="shot-detail-unit">s</span>`;
+  document.getElementById('sd-type').textContent = shot.type;
+  document.getElementById('sd-basket').textContent = shot.basket;
+  document.getElementById('sd-puck').textContent = shot.puck ? '✓ Verwendet' : '✗ Nicht verwendet';
+
+  const noteWrap = document.getElementById('sd-note-wrap');
+  if (shot.note && shot.note.trim()) {
+    document.getElementById('sd-note').textContent = shot.note;
+    noteWrap.style.display = '';
+  } else {
+    noteWrap.style.display = 'none';
+  }
+
+  openSheet('shot-detail-overlay');
+}
+
+document.getElementById('delete-shot-btn').addEventListener('click', async () => {
+  if (!currentShotDetail) return;
+  const idx = shots.indexOf(currentShotDetail);
+  if (idx !== -1) {
+    const removed = shots.splice(idx, 1)[0];
+    await dbDeleteShot(removed.id);
+    closeSheet('shot-detail-overlay');
+    renderVerlauf();
+    buildDashboard();
+  }
+});
 
 function updateActiveChips() {
   const bar = document.getElementById('active-filter-chips');
@@ -1957,7 +1574,9 @@ function updateActiveChips() {
   bar.querySelectorAll('.filter-chip[data-remove]').forEach(c => {
     c.addEventListener('click', () => {
       delete activeFilters[c.dataset.remove];
-      renderVerlauf(); buildDashboard(); updateFilterBadges();
+      renderVerlauf();
+      buildDashboard();
+      updateFilterBadges();
     });
   });
 }
@@ -1975,8 +1594,9 @@ function buildDashboard() {
       <div style="font-size:48px;opacity:0.3;">☕</div>
       <div style="font-size:18px;font-weight:600;color:var(--text-primary);text-align:center;">Noch keine Shots</div>
       <div style="font-size:13px;color:var(--text-secondary);text-align:center;">Logge deinen ersten Espresso Shot!</div>
-      <button onclick="showScreen('screen-log')" style="background:var(--text-primary);color:var(--bg);border:none;border-radius:16px;padding:14px 24px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Zum Shot Log →</button>
-    </div>`; return;
+      <button onclick="showScreen('screen-log')" style="background:var(--text-primary);color:white;border:none;border-radius:16px;padding:14px 24px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Zum Shot Log →</button>
+    </div>`;
+    return;
   }
 
   const total = filtered.length;
@@ -1989,7 +1609,6 @@ function buildDashboard() {
     <div class="kpi-card"><div class="kpi-value">1:${avgRatio.toFixed(1)}</div><div class="kpi-label">Ø Ratio</div></div>
   </div>`;
 
-  // Insights
   const insights = generateInsights(filtered);
   if (insights.length > 0) {
     el.innerHTML += `<div class="dash-section"><div class="dash-section-title">Insights</div>
@@ -1997,7 +1616,6 @@ function buildDashboard() {
     </div>`;
   }
 
-  // Donut
   const gCnt = filtered.filter(s => getAmpel(s.ratio,s.zeit||27)==='green').length;
   const yCnt = filtered.filter(s => getAmpel(s.ratio,s.zeit||27)==='yellow').length;
   const rCnt = filtered.filter(s => getAmpel(s.ratio,s.zeit||27)==='red').length;
@@ -2021,14 +1639,13 @@ function buildDashboard() {
     </div>
   </div></div></div>`;
 
-  // Bohnen
   const beanNames = [...new Set(filtered.map(s => s.bean))];
   const beanStats = beanNames.map(name => {
     const bs = filtered.filter(s => s.bean === name);
     const avgR = bs.reduce((a,s) => a+s.ratio, 0) / bs.length;
     const greenQ = Math.round(bs.filter(s => getAmpel(s.ratio,s.zeit||27)==='green').length / bs.length * 100);
     const bObj = beans.find(b => b.name === name);
-    return { name, cnt: bs.length, avgR, greenQ, totalGrams: bObj?.total_grams || bObj?.totalGrams || 0 };
+    return { name, cnt: bs.length, avgR, greenQ, totalGrams: bObj?.totalGrams || 0 };
   });
 
   el.innerHTML += `<div class="dash-section"><div class="dash-section-title">Bohnen</div>
@@ -2050,36 +1667,8 @@ function buildDashboard() {
   }).join('')}
   </div></div>`;
 
-  // ── EQUIPMENT-SEKTION: Puck Screen Einfluss ──
-  const withPuck = filtered.filter(s => s.puck === true);
-  const withoutPuck = filtered.filter(s => s.puck === false);
-  if (withPuck.length > 0 && withoutPuck.length > 0) {
-    const withPuckGreen = Math.round(withPuck.filter(s => getAmpel(s.ratio,s.zeit||27)==='green').length / withPuck.length * 100);
-    const withoutPuckGreen = Math.round(withoutPuck.filter(s => getAmpel(s.ratio,s.zeit||27)==='green').length / withoutPuck.length * 100);
-    const diff = withPuckGreen - withoutPuckGreen;
-    const diffText = diff > 0 ? `+${diff}% mit Puck Screen` : diff < 0 ? `${diff}% mit Puck Screen` : 'Kein Unterschied';
-    el.innerHTML += `<div class="dash-section"><div class="dash-section-title">Equipment</div>
-    <div class="chart-card">
-      <div class="chart-title">Puck Screen Einfluss</div>
-      <div class="puck-compare-row">
-        <div class="puck-compare-card with-puck">
-          <div class="puck-compare-pct" style="color:var(--green)">${withPuckGreen}%</div>
-          <div class="puck-compare-label">Mit Puck Screen</div>
-          <div class="puck-compare-cnt">${withPuck.length} Shot${withPuck.length!==1?'s':''}</div>
-        </div>
-        <div class="puck-compare-card without-puck">
-          <div class="puck-compare-pct">${withoutPuckGreen}%</div>
-          <div class="puck-compare-label">Ohne Puck Screen</div>
-          <div class="puck-compare-cnt">${withoutPuck.length} Shot${withoutPuck.length!==1?'s':''}</div>
-        </div>
-      </div>
-      <div style="text-align:center;font-size:12px;color:var(--text-secondary);margin-top:10px;">${diffText} 🟢 Quote</div>
-    </div></div>`;
-  }
-
-  // Wochentage
   const byDay = [0,0,0,0,0,0,0];
-  filtered.forEach(s => { const d = s.date instanceof Date ? s.date : new Date(s.date); byDay[d.getDay()]++; });
+  filtered.forEach(s => byDay[s.date.getDay()]++);
   const maxDay = Math.max(...byDay, 1);
   const bW=30, bH=55, bG=11;
   el.innerHTML += `<div class="dash-section"><div class="dash-section-title">Muster</div>
@@ -2128,7 +1717,6 @@ function generateInsights(filtered) {
 // ══════════════════════════════════════════════
 // BEANS
 // ══════════════════════════════════════════════
-let selectedBeanId = loadLocal('espresso_selected_bean', null);
 let pendingDetailBeanId = null;
 let tempSelectedBeanId = null;
 let fillTargetBeanId = null;
@@ -2140,7 +1728,7 @@ function renderBeans() {
   while (slots.length < SLOTS) slots.push(null);
   tempSelectedBeanId = selectedBeanId;
 
-  list.innerHTML = slots.map((b, i) => {
+  list.innerHTML = slots.map((b) => {
     if (!b) return `<div class="bean-slot empty"><span class="bean-slot-empty-text">Leer</span></div>`;
     const stars = b.stars > 0 ? '★'.repeat(b.stars)+'☆'.repeat(5-b.stars) : '☆☆☆☆☆';
     const isSel = b.id === tempSelectedBeanId;
@@ -2158,7 +1746,7 @@ function renderBeans() {
   list.querySelectorAll('.bean-slot.filled').forEach(slot => {
     slot.addEventListener('click', e => {
       if (e.target.closest('.bean-select-btn')) return;
-      pendingDetailBeanId = slot.dataset.id;
+      pendingDetailBeanId = parseInt(slot.dataset.id);
       openBeanDetail(pendingDetailBeanId);
       openSheet('bean-detail-overlay');
     });
@@ -2167,20 +1755,21 @@ function renderBeans() {
   list.querySelectorAll('.bean-select-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      tempSelectedBeanId = btn.dataset.select;
+      tempSelectedBeanId = parseInt(btn.dataset.select);
       list.querySelectorAll('.bean-slot.filled').forEach(s => {
-        s.classList.toggle('selected', s.dataset.id === tempSelectedBeanId);
+        const id = parseInt(s.dataset.id);
+        s.classList.toggle('selected', id === tempSelectedBeanId);
         const sb = s.querySelector('.bean-select-btn');
-        if (sb) sb.classList.toggle('selected', s.dataset.id === tempSelectedBeanId);
+        if (sb) sb.classList.toggle('selected', id === tempSelectedBeanId);
       });
     });
   });
 }
 
-document.getElementById('confirm-bean-selection-btn').addEventListener('click', () => {
+document.getElementById('confirm-bean-selection-btn').addEventListener('click', async () => {
   if (tempSelectedBeanId !== null) {
     selectedBeanId = tempSelectedBeanId;
-    saveLocal('espresso_selected_bean', selectedBeanId);
+    await dbSaveSettings();
     const b = beans.find(x => x.id === selectedBeanId);
     if (b) {
       document.getElementById('selected-bean-name').textContent = b.name;
@@ -2190,22 +1779,34 @@ document.getElementById('confirm-bean-selection-btn').addEventListener('click', 
   closeSheet('bean-sheet-overlay');
 });
 
-document.getElementById('open-sheet-btn').addEventListener('click', () => { renderBeans(); openSheet('bean-sheet-overlay'); });
+document.getElementById('open-sheet-btn').addEventListener('click', () => {
+  renderBeans();
+  openSheet('bean-sheet-overlay');
+});
 
-document.getElementById('btn-fill-bean').addEventListener('click', () => { renderFillBeanList(); openSheet('fill-select-overlay'); });
+document.getElementById('btn-fill-bean').addEventListener('click', () => {
+  renderFillBeanList();
+  openSheet('fill-select-overlay');
+});
 
 function renderFillBeanList() {
   const list = document.getElementById('fill-bean-list');
-  if (beans.length === 0) { list.innerHTML = '<div class="empty-state"><div class="empty-state-text">Keine Bohnen gespeichert</div></div>'; return; }
+  if (beans.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-text">Keine Bohnen gespeichert</div></div>';
+    return;
+  }
   list.innerHTML = beans.map(b => `
-    <div class="bean-slot filled" data-id="${b.id}">
+    <div class="bean-slot filled" data-id="${b.id}" style="cursor:pointer;">
       <div class="bean-dot">${b.emoji}</div>
-      <div class="bean-item-info"><div class="bean-item-name">${b.name}</div><div class="bean-item-sub">${b.sub}</div></div>
+      <div class="bean-item-info">
+        <div class="bean-item-name">${b.name}</div>
+        <div class="bean-item-sub">${b.sub}</div>
+      </div>
       <span style="font-size:12px;color:var(--accent);font-weight:600;">Wählen →</span>
     </div>`).join('');
   list.querySelectorAll('.bean-slot.filled').forEach(slot => {
     slot.addEventListener('click', () => {
-      fillTargetBeanId = slot.dataset.id;
+      fillTargetBeanId = parseInt(slot.dataset.id);
       const b = beans.find(x => x.id === fillTargetBeanId);
       document.getElementById('gram-sheet-title').textContent = `${b?.name} auffüllen`;
       document.querySelectorAll('.gram-btn').forEach(gb => gb.classList.remove('active'));
@@ -2235,18 +1836,12 @@ document.getElementById('confirm-new-bean-btn').addEventListener('click', async 
   if (!name) return;
   const activeGram = document.querySelector('.new-gram-btn.active');
   const grams = activeGram ? parseInt(activeGram.dataset.gram) : 0;
-  const newBean = {
-    id: crypto.randomUUID(),
-    user_id: currentUser?.id,
-    name, sub: document.getElementById('new-bean-sub').value.trim() || '',
-    emoji: document.getElementById('new-bean-emoji').value.trim() || '🫘',
-    stars: 0, total_grams: grams
-  };
+  const newId = Date.now();
+  const newBean = { id: newId, name, sub: document.getElementById('new-bean-sub').value.trim() || '', emoji: document.getElementById('new-bean-emoji').value.trim() || '🫘', stars: 0, totalGrams: grams };
   beans.push(newBean);
-  persistBeans();
-  await pushBeanToSupabase(newBean);
-  selectedBeanId = newBean.id;
-  saveLocal('espresso_selected_bean', selectedBeanId);
+  await dbSaveBean(newBean);
+  selectedBeanId = newId;
+  await dbSaveSettings();
   document.getElementById('selected-bean-name').textContent = newBean.name;
   document.getElementById('selected-bean-sub').textContent = newBean.sub;
   closeSheet('new-bean-overlay');
@@ -2267,11 +1862,7 @@ document.getElementById('confirm-gram-btn').addEventListener('click', async () =
   const grams = parseInt(activeGram.dataset.gram);
   if (fillTargetBeanId) {
     const bean = beans.find(b => b.id === fillTargetBeanId);
-    if (bean) {
-      bean.total_grams = (bean.total_grams || bean.totalGrams || 0) + grams;
-      persistBeans();
-      await pushBeanToSupabase(bean);
-    }
+    if (bean) { bean.totalGrams = (bean.totalGrams||0) + grams; await dbSaveBean(bean); }
     fillTargetBeanId = null;
   }
   closeSheet('gram-sheet-overlay');
@@ -2297,20 +1888,20 @@ document.querySelectorAll('.star-btn').forEach(star => {
 document.getElementById('save-star-btn').addEventListener('click', async () => {
   const rating = document.querySelectorAll('.star-btn.active').length;
   const bean = beans.find(b => b.id === pendingDetailBeanId);
-  if (bean) { bean.stars = rating; persistBeans(); await pushBeanToSupabase(bean); }
+  if (bean) { bean.stars = rating; await dbSaveBean(bean); }
   closeSheet('bean-detail-overlay');
   renderBeans();
 });
 
 document.getElementById('delete-bean-btn').addEventListener('click', async () => {
-  if (currentUser) await sb.delete('beans', pendingDetailBeanId);
-  beans = beans.filter(b => b.id !== pendingDetailBeanId);
-  persistBeans();
-  if (selectedBeanId === pendingDetailBeanId) {
+  const beanId = pendingDetailBeanId;
+  beans = beans.filter(b => b.id !== beanId);
+  await dbDeleteBean(beanId);
+  if (selectedBeanId === beanId) {
     selectedBeanId = beans.length > 0 ? beans[0].id : null;
-    saveLocal('espresso_selected_bean', selectedBeanId);
+    await dbSaveSettings();
     const b = beans.find(x => x.id === selectedBeanId);
-    document.getElementById('selected-bean-name').textContent = b?.name || '';
+    document.getElementById('selected-bean-name').textContent = b?.name || '–';
     document.getElementById('selected-bean-sub').textContent = b?.sub || '';
   }
   closeSheet('bean-detail-overlay');
@@ -2320,14 +1911,16 @@ document.getElementById('delete-bean-btn').addEventListener('click', async () =>
 // ══════════════════════════════════════════════
 // SETTINGS
 // ══════════════════════════════════════════════
-document.getElementById('settings-btn').addEventListener('click', () => { loadSettingsIntoUI(); openSheet('settings-overlay'); });
+document.getElementById('settings-btn').addEventListener('click', () => {
+  loadSettingsIntoUI();
+  openSheet('settings-overlay');
+});
 
 function loadSettingsIntoUI() {
   document.getElementById('setting-machine').value = settings.machine || '';
   document.getElementById('setting-grinder').value = settings.grinder || '';
   document.getElementById('setting-autotimer').classList.toggle('off', !settings.autoTimer);
   document.getElementById('setting-cleaning-active').classList.toggle('off', !settings.cleaningActive);
-  document.getElementById('setting-darkmode').classList.toggle('off', !settings.darkMode);
   document.getElementById('cleaning-val').textContent = settings.cleaningEvery;
   const ds = settings.defaultsSingle || {};
   const dd = settings.defaultsDouble || {};
@@ -2357,17 +1950,16 @@ async function saveSettingsFromUI() {
   settings.autoTimer = !document.getElementById('setting-autotimer').classList.contains('off');
   settings.cleaningActive = !document.getElementById('setting-cleaning-active').classList.contains('off');
   settings.defaultsSingle = {
-    dosis: parseFloat(document.getElementById('setting-default-dosis-single').value)||14,
-    zeit: parseFloat(document.getElementById('setting-default-zeit-single').value)||25,
-    espresso: parseFloat(document.getElementById('setting-default-espresso-single').value)||25,
+    dosis: parseFloat(document.getElementById('setting-default-dosis-single').value) || 14,
+    zeit: parseFloat(document.getElementById('setting-default-zeit-single').value) || 25,
+    espresso: parseFloat(document.getElementById('setting-default-espresso-single').value) || 25,
   };
   settings.defaultsDouble = {
-    dosis: parseFloat(document.getElementById('setting-default-dosis-double').value)||18,
-    zeit: parseFloat(document.getElementById('setting-default-zeit-double').value)||28,
-    espresso: parseFloat(document.getElementById('setting-default-espresso-double').value)||36,
+    dosis: parseFloat(document.getElementById('setting-default-dosis-double').value) || 18,
+    zeit: parseFloat(document.getElementById('setting-default-zeit-double').value) || 28,
+    espresso: parseFloat(document.getElementById('setting-default-espresso-double').value) || 36,
   };
-  persistSettings();
-  await pushSettingsToSupabase();
+  await dbSaveSettings();
   const badge = document.getElementById('timer-mode-badge');
   badge.textContent = settings.autoTimer ? 'AUTO' : 'MANUELL';
   badge.className = 'auto-badge ' + (settings.autoTimer ? 'auto' : 'manual');
@@ -2375,14 +1967,10 @@ async function saveSettingsFromUI() {
 }
 
 document.getElementById('settings-overlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('settings-overlay')) { saveSettingsFromUI(); closeSheet('settings-overlay'); }
-});
-
-document.getElementById('logout-btn').addEventListener('click', async () => {
-  await sb.signOut();
-  currentUser = null; offlineMode = false;
-  showScreen('screen-auth');
-  closeSheet('settings-overlay');
+  if (e.target === document.getElementById('settings-overlay')) {
+    saveSettingsFromUI();
+    closeSheet('settings-overlay');
+  }
 });
 
 document.getElementById('defaults-single-btn').addEventListener('click', () => {
@@ -2401,32 +1989,22 @@ document.getElementById('defaults-double-btn').addEventListener('click', () => {
 document.getElementById('setting-autotimer').addEventListener('click', function() { this.classList.toggle('off'); });
 document.getElementById('setting-cleaning-active').addEventListener('click', function() { this.classList.toggle('off'); updateCleaningCounterSub(); });
 
-// Dark Mode Toggle
-document.getElementById('setting-darkmode').addEventListener('click', function() {
-  this.classList.toggle('off');
-  settings.darkMode = !this.classList.contains('off');
-  applyDarkMode(settings.darkMode);
-  persistSettings();
-  pushSettingsToSupabase();
-});
-
 function updateCleaningCounterSub() {
   const active = !document.getElementById('setting-cleaning-active').classList.contains('off');
   document.getElementById('cleaning-counter-sub').textContent = active
-    ? `${settings.cleaningCounter} von ${settings.cleaningEvery} Bezügen` : 'Deaktiviert';
+    ? `${settings.cleaningCounter} von ${settings.cleaningEvery} Bezügen`
+    : 'Deaktiviert';
 }
 
-document.getElementById('cleaning-minus').addEventListener('click', () => {
+document.getElementById('cleaning-minus').addEventListener('click', async () => {
   settings.cleaningEvery = Math.max(5, settings.cleaningEvery - 5);
   document.getElementById('cleaning-val').textContent = settings.cleaningEvery;
-  persistSettings();
-  updateCleaningCounterSub();
+  await dbSaveSettings(); updateCleaningCounterSub();
 });
-document.getElementById('cleaning-plus').addEventListener('click', () => {
+document.getElementById('cleaning-plus').addEventListener('click', async () => {
   settings.cleaningEvery += 5;
   document.getElementById('cleaning-val').textContent = settings.cleaningEvery;
-  persistSettings();
-  updateCleaningCounterSub();
+  await dbSaveSettings(); updateCleaningCounterSub();
 });
 
 document.getElementById('save-ampel-btn').addEventListener('click', async () => {
@@ -2440,40 +2018,41 @@ document.getElementById('save-ampel-btn').addEventListener('click', async () => 
     zeitYMin: parseFloat(document.getElementById('amp-zeit-y-min').value),
     zeitYMax: parseFloat(document.getElementById('amp-zeit-y-max').value),
   };
-  persistSettings();
-  await pushSettingsToSupabase();
+  await dbSaveSettings();
   const btn = document.getElementById('save-ampel-btn');
   btn.textContent = '✓ Gespeichert';
   setTimeout(() => { btn.textContent = 'Grenzen speichern'; }, 1500);
 });
 
-document.getElementById('unit-g-btn').addEventListener('click', () => { settings.unit='g'; persistSettings(); document.getElementById('unit-g-btn').classList.add('active'); document.getElementById('unit-ml-btn').classList.remove('active'); });
-document.getElementById('unit-ml-btn').addEventListener('click', () => { settings.unit='ml'; persistSettings(); document.getElementById('unit-ml-btn').classList.add('active'); document.getElementById('unit-g-btn').classList.remove('active'); });
+document.getElementById('unit-g-btn').addEventListener('click', async () => {
+  settings.unit = 'g'; await dbSaveSettings();
+  document.getElementById('unit-g-btn').classList.add('active');
+  document.getElementById('unit-ml-btn').classList.remove('active');
+});
+document.getElementById('unit-ml-btn').addEventListener('click', async () => {
+  settings.unit = 'ml'; await dbSaveSettings();
+  document.getElementById('unit-ml-btn').classList.add('active');
+  document.getElementById('unit-g-btn').classList.remove('active');
+});
 
-// ══════════════════════════════════════════════
-// CSV EXPORT
-// ══════════════════════════════════════════════
+// CSV Export
 document.getElementById('export-csv-btn').addEventListener('click', () => {
   if (shots.length === 0) { alert('Keine Shots zum Exportieren.'); return; }
   const header = 'Datum,Uhrzeit,Bohne,BohneDetail,Typ,Siebtraeger,Dosis_g,Espresso_g,Ratio,Zeit_s,Puck,Notiz,Ampel\n';
-  const rows = shots.map(s => {
-    const d = s.date instanceof Date ? s.date : new Date(s.date);
-    return [
-      fmtDate(d), fmtTime(d), `"${s.bean}"`, `"${s.beanSub||''}"`,
-      s.type, s.basket, s.dosis, s.espresso, s.ratio, s.zeit||'',
-      s.puck?'Ja':'Nein', `"${(s.note||'').replace(/"/g,"'")}"`, getAmpel(s.ratio, s.zeit||27)
-    ].join(',');
-  }).join('\n');
-  const blob = new Blob([header+rows], {type:'text/csv;charset=utf-8;'});
+  const rows = shots.map(s => [
+    fmtDate(s.date), fmtTime(s.date), `"${s.bean}"`, `"${s.beanSub||''}"`,
+    s.type, s.basket, s.dosis, s.espresso, s.ratio, s.zeit||'',
+    s.puck?'Ja':'Nein', `"${(s.note||'').replace(/"/g,"'")}"`, getAmpel(s.ratio, s.zeit||27)
+  ].join(',')).join('\n');
+  const blob = new Blob([header+rows], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='espresso-shots.csv'; a.click();
+  const a = document.createElement('a'); a.href = url; a.download = 'espresso-shots.csv'; a.click();
   URL.revokeObjectURL(url);
 });
 
-// ══════════════════════════════════════════════
-// CSV IMPORT — MIT DATUM-FIX
-// ══════════════════════════════════════════════
-document.getElementById('import-csv-btn').addEventListener('click', () => { document.getElementById('import-file-input').click(); });
+document.getElementById('import-csv-btn').addEventListener('click', () => {
+  document.getElementById('import-file-input').click();
+});
 
 document.getElementById('import-file-input').addEventListener('change', async e => {
   const file = e.target.files[0];
@@ -2482,66 +2061,30 @@ document.getElementById('import-file-input').addEventListener('change', async e 
   reader.onload = async ev => {
     const lines = ev.target.result.split('\n').filter(l => l.trim());
     if (lines.length < 2) { alert('Keine Daten gefunden.'); return; }
-
-    // Parse header to find column indices
-    const header = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
-    const col = h => header.indexOf(h);
-
     let imported = 0;
     for (let i = 1; i < lines.length; i++) {
       try {
         const cols = lines[i].match(/(".*?"|[^,]+)(?=,|$)/g) || [];
         const clean = cols.map(c => c.replace(/^"|"$/g,'').trim());
         if (clean.length < 9) continue;
-
-        const ratio = parseFloat(clean[col('Ratio')] ?? clean[8]);
-        const dosis = parseFloat(clean[col('Dosis_g')] ?? clean[6]);
-        const espresso = parseFloat(clean[col('Espresso_g')] ?? clean[7]);
-        const zeit = parseFloat(clean[col('Zeit_s')] ?? clean[9]) || 27;
+        const ratio = parseFloat(clean[8]);
+        const dosis = parseFloat(clean[6]);
+        const espresso = parseFloat(clean[7]);
+        const zeit = parseFloat(clean[9]) || 27;
         if (isNaN(ratio) || isNaN(dosis)) continue;
-
-        // ── DATUM-FIX: Parse "Di, 18. Feb" + "09:41" → echter Date ──
-        const dateStr = clean[col('Datum')] ?? clean[0];
-        const timeStr = clean[col('Uhrzeit')] ?? clean[1];
-        let parsedDate = new Date();
-        try {
-          const monthMap = {Jan:0,Feb:1,'Mär':2,Apr:3,Mai:4,Jun:5,Jul:6,Aug:7,Sep:8,Okt:9,Nov:10,Dez:11};
-          const dateParts = dateStr.replace(/[A-Za-zä]+,\s*/, '').trim().split(' ');
-          const day = parseInt(dateParts[0]);
-          const monthStr = dateParts[1]?.replace('.','');
-          const month = monthMap[monthStr] ?? new Date().getMonth();
-          const year = dateParts[2] ? parseInt(dateParts[2]) : new Date().getFullYear();
-          const [hh, mm] = timeStr.split(':').map(Number);
-          parsedDate = new Date(year, month, day, hh || 0, mm || 0);
-          if (isNaN(parsedDate.getTime())) parsedDate = new Date();
-        } catch(dateErr) { parsedDate = new Date(); }
-
-        const beanName = clean[col('Bohne')] ?? clean[2];
-        const timeKey = fmtDate(parsedDate) + fmtTime(parsedDate);
-        const exists = shots.some(s => {
-          const sd = s.date instanceof Date ? s.date : new Date(s.date);
-          return s.ratio === ratio && s.dosis === dosis && fmtDate(sd)+fmtTime(sd) === timeKey;
-        });
-        if (exists) continue;
-
-        const shot = {
-          id: crypto.randomUUID(),
-          date: parsedDate,
-          bean: beanName,
-          beanSub: clean[col('BohneDetail')] ?? clean[3],
-          type: clean[col('Typ')] ?? clean[4],
-          basket: clean[col('Siebtraeger')] ?? clean[5],
+        const newShot = {
+          date: new Date(),
+          bean: clean[2], beanSub: clean[3],
+          type: clean[4], basket: clean[5],
           dosis, espresso, ratio, zeit,
-          puck: (clean[col('Puck')] ?? clean[10]) === 'Ja',
-          note: clean[col('Notiz')] ?? clean[11] || ''
+          puck: clean[10] === 'Ja',
+          note: clean[11] || ''
         };
-        shots.push(shot);
-        if (currentUser) await pushShotToSupabase(shot);
+        shots.push(newShot);
+        await dbSaveShot(newShot);
         imported++;
       } catch(err) {}
     }
-    shots.sort((a,b) => new Date(b.date) - new Date(a.date));
-    persistShots();
     e.target.value = '';
     alert(`${imported} Shots importiert.`);
   };
@@ -2552,45 +2095,47 @@ document.getElementById('import-file-input').addEventListener('change', async e 
 // CLEANING POPUP
 // ══════════════════════════════════════════════
 function showCleaningPopup() {
-  document.getElementById('cleaning-popup-text').textContent = `Du hast ${settings.cleaningCounter} Bezüge gemacht. Zeit für eine Reinigung!`;
+  document.getElementById('cleaning-popup-text').textContent =
+    `Du hast ${settings.cleaningCounter} Bezüge gemacht. Zeit für eine Reinigung!`;
   document.getElementById('cleaning-popup').classList.add('open');
 }
-document.getElementById('cleaning-later-btn').addEventListener('click', () => { document.getElementById('cleaning-popup').classList.remove('open'); });
+document.getElementById('cleaning-later-btn').addEventListener('click', () => {
+  document.getElementById('cleaning-popup').classList.remove('open');
+});
 document.getElementById('cleaning-done-btn').addEventListener('click', async () => {
   settings.cleaningCounter = 0;
-  persistSettings();
-  await pushSettingsToSupabase();
+  await dbSaveSettings();
   document.getElementById('cleaning-popup').classList.remove('open');
 });
 
 // ══════════════════════════════════════════════
 // AUTO TIMER
 // ══════════════════════════════════════════════
-let audioCtx=null, analyser=null, micStream=null, timerInterval=null;
-let timerRunning=false, timerSeconds=0, lastPeakTime=0;
+let audioCtx = null, analyser = null, micStream = null, timerInterval = null;
+let timerRunning = false, timerSeconds = 0, lastPeakTime = 0;
 
 async function initAutoTimer() {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     micStream = stream;
-    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioCtx.createMediaStreamSource(stream);
     analyser = audioCtx.createAnalyser();
     analyser.fftSize = 256;
     source.connect(analyser);
     monitorAudio();
   } catch(e) {
-    settings.autoTimer = false; persistSettings();
+    settings.autoTimer = false; await dbSaveSettings();
     document.getElementById('timer-mode-badge').textContent = 'MANUELL';
     document.getElementById('timer-mode-badge').className = 'auto-badge manual';
   }
 }
 
 function stopAutoTimer() {
-  if (micStream) { micStream.getTracks().forEach(t=>t.stop()); micStream=null; }
-  if (audioCtx) { audioCtx.close(); audioCtx=null; analyser=null; }
-  if (timerInterval) { clearInterval(timerInterval); timerInterval=null; }
-  timerRunning=false;
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  if (audioCtx) { audioCtx.close(); audioCtx = null; analyser = null; }
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  timerRunning = false;
 }
 
 function monitorAudio() {
@@ -2599,15 +2144,15 @@ function monitorAudio() {
   function check() {
     if (!analyser) return;
     analyser.getByteFrequencyData(data);
-    const avg = data.reduce((a,b)=>a+b,0)/data.length;
+    const avg = data.reduce((a,b) => a+b, 0) / data.length;
     const now = Date.now();
-    if (avg > 60 && (now-lastPeakTime) > 1500) {
+    if (avg > 60 && (now - lastPeakTime) > 1500) {
       lastPeakTime = now;
       if (!timerRunning) {
-        timerRunning=true; timerSeconds=0;
-        timerInterval = setInterval(()=>{ timerSeconds++; setStepperVal('durchlauf-stepper', timerSeconds); },1000);
+        timerRunning = true; timerSeconds = 0;
+        timerInterval = setInterval(() => { timerSeconds++; setStepperVal('durchlauf-stepper', timerSeconds); }, 1000);
       } else {
-        clearInterval(timerInterval); timerInterval=null; timerRunning=false;
+        clearInterval(timerInterval); timerInterval = null; timerRunning = false;
       }
     }
     requestAnimationFrame(check);
@@ -2626,10 +2171,14 @@ setInterval(updateDateTime, 30000);
 document.getElementById('kw-label').textContent = getKW(new Date());
 
 // ══════════════════════════════════════════════
-// INIT APP
+// INIT
 // ══════════════════════════════════════════════
-function initApp() {
+async function initApp() {
   updateDateTime();
+
+  // Load from Supabase (falls back to localStorage if offline)
+  await dbLoadAll();
+
   const activeBezug = document.querySelector('#bezug-toggle .toggle-btn.active')?.textContent?.trim() || 'Double';
   const isDouble = activeBezug === 'Double';
   const defs = isDouble ? (settings.defaultsDouble||{}) : (settings.defaultsSingle||{});
@@ -2639,7 +2188,7 @@ function initApp() {
   initStepper('espresso-stepper', defs.espresso ?? 36);
 
   const b = beans.find(x => x.id === selectedBeanId);
-  document.getElementById('selected-bean-name').textContent = b?.name || '';
+  document.getElementById('selected-bean-name').textContent = b?.name || '–';
   document.getElementById('selected-bean-sub').textContent = b?.sub || '';
 
   const badge = document.getElementById('timer-mode-badge');
@@ -2647,29 +2196,11 @@ function initApp() {
   badge.className = 'auto-badge ' + (settings.autoTimer ? 'auto' : 'manual');
   if (settings.autoTimer) initAutoTimer();
 
-  applyDarkMode(settings.darkMode);
-
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
-}
-
-// ══════════════════════════════════════════════
-// AUTO-LOGIN
-// ══════════════════════════════════════════════
-(async function autoLogin() {
-  const token = loadLocal('sb_token', null);
-  if (token) {
-    sb.setToken(token);
-    const savedUser = getSavedUser();
-    if (savedUser) {
-      currentUser = savedUser;
-      // Try to refresh session silently
-      await sb.refreshSession().catch(()=>{});
-      await startApp();
-      return;
-    }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
-  // No saved session — show auth screen
-})();
+}
 </script>
+
 </body>
 </html>
