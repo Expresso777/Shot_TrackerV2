@@ -20,6 +20,11 @@
   touch-action: manipulation;
   -webkit-touch-callout: none;
 }
+button, input, select, textarea {
+  -webkit-appearance: none;
+  appearance: none;
+  font-family: inherit;
+}
 :root {
   --bg: #F2F0EB;
   --card: #FFFFFF;
@@ -81,6 +86,7 @@ font-family: ‘DM Sans’, sans-serif; font-size: 12px; font-weight: 500;
 color: var(–text-secondary); cursor: pointer;
 box-shadow: var(–shadow); white-space: nowrap;
 height: 34px; display: flex; align-items: center;
+-webkit-appearance: none; appearance: none;
 }
 .icon-btn {
 background: var(–card); border: none; border-radius: 12px;
@@ -142,6 +148,8 @@ flex: 1; padding: 8px 0; border: none; border-radius: 12px;
 font-family: ‘DM Sans’, sans-serif; font-size: 13px; font-weight: 500;
 cursor: pointer; transition: all 0.18s;
 background: var(–toggle-bg); color: var(–text-secondary);
+-webkit-appearance: none; appearance: none;
+-webkit-font-smoothing: antialiased;
 }
 .toggle-btn.active { background: var(–toggle-active); color: #fff; }
 
@@ -155,6 +163,7 @@ width: 34px; height: 34px; border-radius: 10px; border: none;
 background: var(–accent-light); color: var(–accent); font-size: 20px;
 cursor: pointer; display: flex; align-items: center; justify-content: center;
 transition: all 0.15s; user-select: none; -webkit-user-select: none; touch-action: manipulation;
+-webkit-appearance: none; appearance: none;
 }
 .stepper-btn:active { transform: scale(0.9); background: var(–accent); color: white; }
 .stepper-value { font-size: 22px; font-weight: 500; color: var(–text-primary); min-width: 56px; text-align: center; }
@@ -386,7 +395,7 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(–text-primary); vert
 .popup-btn-done { background: var(–green); color: white; }
 
 /* Sync indicator */
-.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(–green); display: inline-block; margin-left: 4px; transition: background 0.3s; }
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(–green); display: inline-block; flex-shrink: 0; transition: background 0.3s; }
 .sync-dot.syncing { background: var(–yellow); animation: pulse 1s infinite; }
 .sync-dot.error { background: var(–red); }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
@@ -425,7 +434,8 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(–text-primary); vert
         </button>
       </div>
       <div class="top-bar-center">
-        <h1>Shot Log <span class="sync-dot" id="sync-dot"></span></h1>
+        <h1>Shot Log</h1>
+        <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:2px;"><span class="sync-dot" id="sync-dot"></span><span id="sync-label" style="font-size:10px;color:var(--text-secondary);"></span></div>
         <p id="current-date"></p>
       </div>
       <div class="top-bar-right">
