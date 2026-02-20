@@ -43,19 +43,21 @@ button, input, select, textarea {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
-html { height: 100%; overflow: hidden; -webkit-text-size-adjust: 100%; }
+html { height: 100%; height: 100dvh; overflow: hidden; -webkit-text-size-adjust: 100%; }
 body {
   font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
   background: var(--bg);
-  height: 100%; overflow: hidden;
+  height: 100%; height: 100dvh; overflow: hidden;
   overscroll-behavior: none;
+  overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
   user-select: none; -webkit-user-select: none;
+  position: fixed; width: 100%;
 }
 * { touch-action: manipulation; }
 
 /* ── APP WRAPPER ── */
-#app { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; padding-top: var(--safe-top); }
+#app { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 
 /* ── SCREENS ── */
 .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; min-height: 0; }
@@ -66,7 +68,7 @@ body {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: 12px 16px 8px;
+  padding: 14px 16px 8px;
   flex-shrink: 0;
   min-height: 52px;
 }
@@ -124,15 +126,16 @@ body {
 }
 .log-scroll::-webkit-scrollbar { display: none; }
 .save-wrap {
-  flex-shrink: 0; padding: 10px 16px;
-  padding-bottom: calc(10px + var(--safe-bottom));
+  flex-shrink: 0; padding: 12px 16px 28px;
   background: var(--bg);
 }
 .save-btn {
   background: var(--text-primary); color: white; border: none;
-  border-radius: 16px; padding: 17px;
-  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; font-weight: 600;
+  border-radius: 20px; padding: 24px 17px;
+  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; font-size: 18px; font-weight: 600;
   cursor: pointer; width: 100%; transition: all 0.2s;
+  -webkit-appearance: none; appearance: none;
+  min-height: 70px;
 }
 .save-btn:active { opacity: 0.8; }
 
@@ -194,7 +197,7 @@ body {
 .verlauf-content {
   flex: 1; display: flex; flex-direction: column;
   padding: 8px 16px;
-  padding-bottom: calc(8px + var(--safe-bottom));
+  padding-bottom: 16px;
   gap: 8px; overflow: hidden; min-height: 0;
 }
 
@@ -257,7 +260,7 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
 .empty-state-text { font-size: 13px; font-weight: 500; text-align: center; }
 
 /* ── SCREEN 3: DASHBOARD ── */
-.dash-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 8px 16px; padding-bottom: calc(16px + var(--safe-bottom)); min-height: 0; }
+.dash-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 8px 16px 16px; min-height: 0; }
 .dash-content::-webkit-scrollbar { display: none; }
 .kpi-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
 .kpi-card { background: var(--card); border-radius: 14px; padding: 11px 9px; box-shadow: var(--shadow); text-align: center; }
@@ -371,7 +374,7 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
 .defaults-toggle .toggle-btn { padding: 7px 0; font-size: 13px; }
 
 /* Password screen */
-#screen-password { background: var(--bg); display: none; align-items: center; justify-content: center; padding: 40px 32px; padding-top: calc(40px + var(--safe-top)); padding-bottom: calc(40px + var(--safe-bottom)); }
+#screen-password { background: var(--bg); display: none; align-items: center; justify-content: center; padding: 40px 32px; padding-top: calc(40px + var(--safe-top)); padding-bottom: 40px; }
 #screen-password.active { display: flex; flex-direction: column; }
 .pw-logo { font-size: 56px; margin-bottom: 24px; }
 .pw-title { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 32px; color: var(--text-primary); margin-bottom: 6px; }
@@ -477,7 +480,7 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
   <div class="two-col">
     <div class="stepper-card">
       <div class="stepper-label">Dosis</div>
-      <div class="stepper" id="dosis-stepper" data-step="0.5" data-unit="g" data-dec="1">
+      <div class="stepper" id="dosis-stepper" data-step="0.1" data-unit="g" data-dec="1">
         <button class="stepper-btn">−</button>
         <span class="stepper-value">18<span class="stepper-unit">g</span></span>
         <button class="stepper-btn">+</button>
@@ -501,7 +504,7 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
       <div class="stepper-label" style="margin-bottom:0">Espresso</div>
       <span class="ratio-chip" id="ratio-chip">1 : 2.0 Ratio</span>
     </div>
-    <div class="stepper" id="espresso-stepper" data-step="0.5" data-unit="g" data-dec="1">
+    <div class="stepper" id="espresso-stepper" data-step="0.1" data-unit="g" data-dec="1">
       <button class="stepper-btn">−</button>
       <span class="stepper-value">36<span class="stepper-unit">g</span></span>
       <button class="stepper-btn">+</button>
@@ -859,7 +862,7 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
           <div class="settings-row">
             <div><div class="settings-row-label">Dosis</div></div>
             <div style="display:flex;align-items:center;gap:6px;">
-              <input class="settings-input" id="setting-default-dosis-single" type="number" step="0.5" min="1" max="30" value="14" style="width:64px;">
+              <input class="settings-input" id="setting-default-dosis-single" type="number" step="0.1" min="1" max="30" value="14" style="width:64px;">
               <span style="font-size:12px;color:var(--text-secondary)">g</span>
             </div>
           </div>
@@ -873,7 +876,7 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
           <div class="settings-row">
             <div><div class="settings-row-label">Espresso</div></div>
             <div style="display:flex;align-items:center;gap:6px;">
-              <input class="settings-input" id="setting-default-espresso-single" type="number" step="0.5" min="1" max="60" value="25" style="width:64px;">
+              <input class="settings-input" id="setting-default-espresso-single" type="number" step="0.1" min="1" max="60" value="25" style="width:64px;">
               <span style="font-size:12px;color:var(--text-secondary)">g</span>
             </div>
           </div>
@@ -882,7 +885,7 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
           <div class="settings-row">
             <div><div class="settings-row-label">Dosis</div></div>
             <div style="display:flex;align-items:center;gap:6px;">
-              <input class="settings-input" id="setting-default-dosis-double" type="number" step="0.5" min="1" max="30" value="18" style="width:64px;">
+              <input class="settings-input" id="setting-default-dosis-double" type="number" step="0.1" min="1" max="30" value="18" style="width:64px;">
               <span style="font-size:12px;color:var(--text-secondary)">g</span>
             </div>
           </div>
@@ -896,7 +899,7 @@ tbody td { padding: 9px 13px; font-size: 13px; color: var(--text-primary); verti
           <div class="settings-row">
             <div><div class="settings-row-label">Espresso</div></div>
             <div style="display:flex;align-items:center;gap:6px;">
-              <input class="settings-input" id="setting-default-espresso-double" type="number" step="0.5" min="1" max="60" value="36" style="width:64px;">
+              <input class="settings-input" id="setting-default-espresso-double" type="number" step="0.1" min="1" max="60" value="36" style="width:64px;">
               <span style="font-size:12px;color:var(--text-secondary)">g</span>
             </div>
           </div>
@@ -1293,6 +1296,14 @@ document.querySelectorAll('.toggle-group').forEach(group => {
     btn.addEventListener('click', () => {
       group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      // Wenn Bezug-Toggle gewechselt wird, Standardwerte laden
+      if (group.id === 'bezug-toggle') {
+        const isDouble = btn.textContent.trim() === 'Double';
+        const defs = isDouble ? (settings.defaultsDouble || {}) : (settings.defaultsSingle || {});
+        if (defs.dosis) setStepperVal('dosis-stepper', defs.dosis);
+        if (defs.zeit) setStepperVal('durchlauf-stepper', defs.zeit);
+        if (defs.espresso) setStepperVal('espresso-stepper', defs.espresso);
+      }
     });
   });
 });
