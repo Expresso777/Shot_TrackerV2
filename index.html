@@ -54,13 +54,11 @@ body {
   overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
   user-select: none; -webkit-user-select: none;
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  width: 100%; height: 100%;
   touch-action: manipulation;
   overflow: hidden;
 }
 /* ── APP WRAPPER ── */
-#app { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; padding-top: max(env(safe-area-inset-top, 0px), 44px); padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px); }
+#app { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 
 /* ── SCREENS ── */
 .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; min-height: 0; }
@@ -170,8 +168,9 @@ body {
   width: 34px; height: 34px; border-radius: 10px; border: none;
   background: var(--accent-light); color: var(--accent); font-size: 20px;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s; user-select: none; -webkit-user-select: none; touch-action: manipulation;
-  -webkit-appearance: none; appearance: none;
+  transition: all 0.15s; user-select: none; -webkit-user-select: none;
+  touch-action: manipulation; -webkit-appearance: none; appearance: none;
+  -webkit-user-select: none; user-select: none;
 }
 .stepper-btn:active { transform: scale(0.9); background: var(--accent); color: white; }
 .stepper-value { font-size: 22px; font-weight: 500; color: var(--text-primary); min-width: 56px; text-align: center; }
@@ -1229,9 +1228,12 @@ async function dbLoadAll() {
         unit: r.unit,
         ampel: r.ampel,
       };
-      selectedBeanId = r.selected_bean_id;
+      // Bean-ID nur übernehmen wenn Supabase einen Wert hat
+      if (r.selected_bean_id !== null && r.selected_bean_id !== undefined) {
+        selectedBeanId = r.selected_bean_id;
+        saveLocal('espresso_selected_bean_v2', String(selectedBeanId));
+      }
       saveLocal('espresso_settings_v2', settings);
-      saveLocal('espresso_selected_bean_v2', selectedBeanId);
     } else {
       await dbSaveSettings();
     }
@@ -1416,21 +1418,11 @@ function initStepper(id, initVal) {
   const minusBtn = s.querySelector('.stepper-btn:first-child');
   const plusBtn = s.querySelector('.stepper-btn:last-child');
 
-  // iOS Safari: touchend ist zuverlässiger als click für Buttons in scroll-containern
-  function addTapHandler(btn, handler) {
-    let touchMoved = false;
-    btn.addEventListener('touchstart', () => { touchMoved = false; }, { passive: true });
-    btn.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true });
-    btn.addEventListener('touchend', e => {
-      if (touchMoved) return;
-      e.preventDefault();
-      handler(e);
-    }, { passive: false });
-    btn.addEventListener('click', handler); // Fallback für non-touch
-  }
-
-  addTapHandler(minusBtn, handleMinus);
-  addTapHandler(plusBtn, handlePlus);
+  // Einfachste zuverlässige Lösung: nur click
+  // touch-action:manipulation auf dem Button CSS verhindert double-tap zoom
+  // und macht click auf iOS genauso zuverlässig wie auf Desktop
+  minusBtn.addEventListener('click', handleMinus);
+  plusBtn.addEventListener('click', handlePlus);
 }
 
 function updateRatio() {
@@ -2353,16 +2345,20 @@ document.getElementById('kw-label').textContent = getKW(new Date());
 // SOFORT: Bean aus localStorage anzeigen (synchron, vor Supabase)
 // ══════════════════════════════════════════════
 function restoreBeanUI() {
-  const beanId = selectedBeanId || loadLocal('espresso_selected_bean_v2', null);
+  const beanId = selectedBeanId !== null && selectedBeanId !== undefined
+    ? selectedBeanId
+    : loadLocal('espresso_selected_bean_v2', null);
   if (!beanId) return;
-  const allBeans = loadLocal('espresso_beans_v2', []);
-  const b = allBeans.find(x => String(x.id) === String(beanId));
+  // Erst aus bereits geladenen beans[] suchen, dann aus localStorage-Cache
+  const searchIn = beans.length > 0 ? beans : loadLocal('espresso_beans_v2', []);
+  const b = searchIn.find(x => String(x.id) === String(beanId));
   if (b) {
     selectedBeanId = b.id;
     const nameEl = document.getElementById('selected-bean-name');
     const subEl = document.getElementById('selected-bean-sub');
     if (nameEl) nameEl.textContent = b.name || '–';
     if (subEl) subEl.textContent = b.sub || '';
+    saveLocal('espresso_selected_bean_v2', String(b.id));
   }
 }
 
@@ -2387,19 +2383,7 @@ async function initApp() {
   initStepper('espresso-stepper', defs.espresso ?? 36);
 
   // Bohne mit frischen Supabase-Daten aktualisieren
-  const savedBeanId = selectedBeanId || loadLocal('espresso_selected_bean_v2', null);
-  if (savedBeanId) {
-    const b = beans.find(x => String(x.id) === String(savedBeanId));
-    if (b) {
-      selectedBeanId = b.id;
-      document.getElementById('selected-bean-name').textContent = b.name || '–';
-      document.getElementById('selected-bean-sub').textContent = b.sub || '';
-      saveLocal('espresso_selected_bean_v2', String(selectedBeanId));
-    } else {
-      // Bean nicht in Liste - zeige trotzdem gespeicherten Namen wenn vorhanden
-      restoreBeanUI();
-    }
-  }
+  restoreBeanUI();
 
   // Device-ID und Username in Einstellungen anzeigen
   const deviceDisplay = document.getElementById('device-id-display');
