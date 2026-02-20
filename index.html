@@ -45,7 +45,7 @@ button, input, select, textarea {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
-html { height: 100%; height: 100dvh; overflow: clip; -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+html { height: 100%; height: 100dvh; overflow: hidden; -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 body {
   font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
   background: var(--bg);
@@ -57,10 +57,10 @@ body {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   width: 100%; height: 100%;
   touch-action: manipulation;
-  overflow: clip;
+  overflow: hidden;
 }
 /* ── APP WRAPPER ── */
-#app { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+#app { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; padding-top: max(env(safe-area-inset-top, 0px), 44px); padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px); }
 
 /* ── SCREENS ── */
 .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; min-height: 0; }
@@ -1893,11 +1893,12 @@ function renderBeans() {
 document.getElementById('confirm-bean-selection-btn').addEventListener('click', async () => {
   if (tempSelectedBeanId !== null) {
     selectedBeanId = tempSelectedBeanId;
+    saveLocal('espresso_selected_bean_v2', String(selectedBeanId));
     await dbSaveSettings();
-    const b = beans.find(x => x.id === selectedBeanId);
+    const b = beans.find(x => String(x.id) === String(selectedBeanId));
     if (b) {
       document.getElementById('selected-bean-name').textContent = b.name;
-      document.getElementById('selected-bean-sub').textContent = b.sub;
+      document.getElementById('selected-bean-sub').textContent = b.sub || '';
     }
   }
   closeSheet('bean-sheet-overlay');
@@ -2036,6 +2037,13 @@ document.getElementById('delete-bean-btn').addEventListener('click', async () =>
 // SETTINGS
 // ══════════════════════════════════════════════
 document.getElementById('settings-btn').addEventListener('click', () => {
+  // Username und Device-ID beim Öffnen frisch laden
+  const deviceDisplay = document.getElementById('device-id-display');
+  if (deviceDisplay) deviceDisplay.textContent = DEVICE_ID;
+  const savedUsername = localStorage.getItem('espresso_username');
+  const unInput = document.getElementById('setting-username');
+  if (unInput && savedUsername) unInput.value = savedUsername;
+  if (unInput && !savedUsername) unInput.value = '';
   loadSettingsIntoUI();
   openSheet('settings-overlay');
 });
@@ -2342,10 +2350,30 @@ setInterval(updateDateTime, 30000);
 document.getElementById('kw-label').textContent = getKW(new Date());
 
 // ══════════════════════════════════════════════
+// SOFORT: Bean aus localStorage anzeigen (synchron, vor Supabase)
+// ══════════════════════════════════════════════
+function restoreBeanUI() {
+  const beanId = selectedBeanId || loadLocal('espresso_selected_bean_v2', null);
+  if (!beanId) return;
+  const allBeans = loadLocal('espresso_beans_v2', []);
+  const b = allBeans.find(x => String(x.id) === String(beanId));
+  if (b) {
+    selectedBeanId = b.id;
+    const nameEl = document.getElementById('selected-bean-name');
+    const subEl = document.getElementById('selected-bean-sub');
+    if (nameEl) nameEl.textContent = b.name || '–';
+    if (subEl) subEl.textContent = b.sub || '';
+  }
+}
+
+// ══════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════
 async function initApp() {
   updateDateTime();
+
+  // Sofort Bean aus localStorage anzeigen (synchron)
+  restoreBeanUI();
 
   // Load from Supabase (falls back to localStorage if offline)
   await dbLoadAll();
@@ -2358,23 +2386,19 @@ async function initApp() {
   initStepper('durchlauf-stepper', defs.zeit ?? 28);
   initStepper('espresso-stepper', defs.espresso ?? 36);
 
-  // Letzte Bohne wiederherstellen
-  // selectedBeanId kommt aus dbLoadAll (Supabase settings) oder localStorage
+  // Bohne mit frischen Supabase-Daten aktualisieren
   const savedBeanId = selectedBeanId || loadLocal('espresso_selected_bean_v2', null);
   if (savedBeanId) {
-    const b = beans.find(x => x.id == savedBeanId); // == statt === für number/string Vergleich
+    const b = beans.find(x => String(x.id) === String(savedBeanId));
     if (b) {
       selectedBeanId = b.id;
       document.getElementById('selected-bean-name').textContent = b.name || '–';
       document.getElementById('selected-bean-sub').textContent = b.sub || '';
-      saveLocal('espresso_selected_bean_v2', selectedBeanId);
+      saveLocal('espresso_selected_bean_v2', String(selectedBeanId));
     } else {
-      document.getElementById('selected-bean-name').textContent = '–';
-      document.getElementById('selected-bean-sub').textContent = '';
+      // Bean nicht in Liste - zeige trotzdem gespeicherten Namen wenn vorhanden
+      restoreBeanUI();
     }
-  } else {
-    document.getElementById('selected-bean-name').textContent = '–';
-    document.getElementById('selected-bean-sub').textContent = '';
   }
 
   // Device-ID und Username in Einstellungen anzeigen
